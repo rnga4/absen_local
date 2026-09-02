@@ -313,15 +313,21 @@ function compute_row($empCode, &$punches)
                 lbl.style.outline = '2px solid var(--primary)';
             });
 
-            // === HAMBURGER CLICK OUTSIDE CLOSE ===
-            document.addEventListener('click', function (e) {
-                var burger = document.getElementById('burger-toggle');
-                var navMenu = document.getElementById('navMenu');
-                if (burger && burger.checked && !e.target.closest('.topbar')) {
-                    burger.checked = false;
-                    if (navMenu) navMenu.classList.remove('open');
-                }
-            });
+            // === HAMBURGER MENU TOGGLE & CLICK OUTSIDE CLOSE ===
+            var burger = document.getElementById('burger-toggle');
+            var navMenu = document.getElementById('navMenu');
+            if (burger && navMenu) {
+                burger.addEventListener('change', function () {
+                    navMenu.classList.toggle('open', this.checked);
+                });
+
+                document.addEventListener('click', function (e) {
+                    if (!e.target.closest('.topbar') && burger.checked) {
+                        burger.checked = false;
+                        navMenu.classList.remove('open');
+                    }
+                });
+            }
         })();
     </script>
 </body>

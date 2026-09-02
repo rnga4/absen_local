@@ -850,25 +850,9 @@ h2.dept-title {
   box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
 }
 
-/* === NAVBAR MOBILE SCROLL === */
-@media (max-width: 600px) {
-  .topbar {
-    flex-wrap: nowrap !important;
-    overflow: hidden;
-  }
-  .topbar .nav-right {
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-    width: 100% !important;
-  }
-  .topbar .nav-right::-webkit-scrollbar { display: none !important; }
-  .topbar .nav-right a,
-  .theme-switch-btn {
-    white-space: nowrap !important;
-    flex-shrink: 0 !important;
-  }
+/* === NAVBAR OVERFLOW FIX FOR DROPDOWN === */
+.topbar {
+  overflow: visible !important;
 }
 
 /* === BADGE UNIFORM SIZE === */
@@ -1047,7 +1031,8 @@ h2.dept-title {
 .topbar {
   position: sticky;
   top: 0;
-  z-index: 90;
+  z-index: 990 !important;
+  overflow: visible !important;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1055,21 +1040,21 @@ h2.dept-title {
 
 .topbar .nav-right {
   display: none;
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 24px;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 6px;
-  background: color-mix(in oklch, var(--card) 95%, transparent) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  position: absolute !important;
+  top: calc(100% + 8px) !important;
+  right: 16px !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 6px !important;
+  background: var(--card, #1e1e2e) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
   border: 1px solid var(--border) !important;
   border-radius: 16px !important;
   padding: 10px !important;
-  box-shadow: var(--shadow-lg), 0 8px 32px rgba(0,0,0,0.18) !important;
-  z-index: 100;
-  min-width: 190px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3) !important;
+  z-index: 9999 !important;
+  min-width: 190px !important;
 }
 
 .topbar:has(.hamburger input:checked) .nav-right,

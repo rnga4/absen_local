@@ -169,15 +169,23 @@ foreach ($employees as $emp) {
             else nav.classList.remove('scrolled');
         });
 
-        // === HAMBURGER CLICK OUTSIDE CLOSE ===
-        document.addEventListener('click', function (e) {
+        // === HAMBURGER MENU TOGGLE & CLICK OUTSIDE CLOSE ===
+        (function() {
             var burger = document.getElementById('burger-toggle');
             var navMenu = document.getElementById('navMenu');
-            if (burger && burger.checked && !e.target.closest('.topbar')) {
-                burger.checked = false;
-                if (navMenu) navMenu.classList.remove('open');
-            }
-        });
+            if (!burger || !navMenu) return;
+
+            burger.addEventListener('change', function () {
+                navMenu.classList.toggle('open', this.checked);
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!e.target.closest('.topbar') && burger.checked) {
+                    burger.checked = false;
+                    navMenu.classList.remove('open');
+                }
+            });
+        })();
     </script>
 </body>
 </html>
