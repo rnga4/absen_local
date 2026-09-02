@@ -1027,104 +1027,144 @@ h2.dept-title {
   stroke-dashoffset: -32.42;
 }
 
-/* === DROPDOWN NAV MENU === */
-.topbar {
-  position: sticky;
+/* === SLIDE-OVER DRAWER (GLASSMORPHIC) === */
+.drawer-checkbox {
+  display: none !important;
+}
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9998;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s;
+}
+
+.drawer-panel {
+  position: fixed;
   top: 0;
-  z-index: 990 !important;
-  overflow: visible !important;
+  right: 0;
+  bottom: 0;
+  width: 280px;
+  max-width: 85vw;
+  background: color-mix(in oklch, var(--card) 95%, transparent) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border-left: 1px solid var(--border) !important;
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.25) !important;
+  z-index: 9999 !important;
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 20px;
+  box-sizing: border-box;
+}
+
+/* Slide in when drawer-toggle is checked */
+.drawer-checkbox:checked ~ .drawer-overlay,
+body:has(.drawer-checkbox:checked) .drawer-overlay {
+  opacity: 1;
+  visibility: visible;
+}
+
+.drawer-checkbox:checked ~ .drawer-panel,
+body:has(.drawer-checkbox:checked) .drawer-panel {
+  transform: translateX(0);
+}
+
+.drawer-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
 }
 
-.topbar .nav-right {
-  display: none;
-  position: absolute !important;
-  top: calc(100% + 6px) !important;
-  right: 16px !important;
-  flex-direction: column !important;
-  align-items: stretch !important;
-  gap: 4px !important;
-  background: color-mix(in oklch, var(--card) 96%, transparent) !important;
-  backdrop-filter: blur(20px) !important;
-  -webkit-backdrop-filter: blur(20px) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 14px !important;
-  padding: 6px !important;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.22) !important;
-  z-index: 9999 !important;
-  width: 160px !important;
-  min-width: 160px !important;
-  max-width: 180px !important;
-  box-sizing: border-box !important;
+.drawer-header .drawer-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--primary);
 }
 
-@media (max-width: 600px) {
-  .topbar .nav-right {
-    right: 12px !important;
-    top: calc(100% + 4px) !important;
-    width: 150px !important;
-    min-width: 150px !important;
-    padding: 6px !important;
-    gap: 3px !important;
-    border-radius: 12px !important;
-  }
-  .topbar .nav-right a,
-  .topbar .nav-right .theme-switch-btn {
-    padding: 7px 10px !important;
-    font-size: 0.78rem !important;
-    border-radius: 6px !important;
-  }
+.drawer-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted-foreground);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  line-height: 1;
 }
 
-.topbar:has(.hamburger input:checked) .nav-right,
-.topbar .nav-right.open {
-  display: flex !important;
-  animation: navSlideDown 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.drawer-close-btn:hover {
+  color: var(--foreground);
+  background: color-mix(in oklch, var(--foreground) 10%, transparent);
 }
 
-@keyframes navSlideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-6px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+.drawer-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
 }
 
-.topbar .nav-right a,
-.topbar .nav-right .theme-switch-btn {
+.drawer-nav a,
+.drawer-nav .theme-switch-btn {
   display: flex !important;
   align-items: center !important;
-  justify-content: space-between !important;
-  padding: 8px 12px !important;
-  border-radius: 8px !important;
-  font-size: 0.82rem !important;
+  gap: 12px !important;
+  padding: 12px 16px !important;
+  border-radius: 12px !important;
+  font-size: 0.92rem !important;
   font-weight: 600 !important;
   color: var(--foreground) !important;
   text-decoration: none !important;
   background: transparent !important;
   box-shadow: none !important;
-  transition: all 0.15s ease !important;
+  transition: all 0.2s ease !important;
+  border: none !important;
   width: 100% !important;
   box-sizing: border-box !important;
-  margin: 0 !important;
-  white-space: nowrap !important;
+  cursor: pointer !important;
+  text-transform: none !important;
 }
 
-.topbar .nav-right a:hover,
-.topbar .nav-right .theme-switch-btn:hover {
-  background: color-mix(in oklch, var(--primary) 14%, transparent) !important;
+.drawer-nav a:hover,
+.drawer-nav .theme-switch-btn:hover {
+  background: color-mix(in oklch, var(--primary) 12%, transparent) !important;
   color: var(--primary) !important;
-  transform: none !important;
+  transform: translateX(4px) !important;
 }
 
-.topbar .nav-right a.active {
+.drawer-nav a.active {
   background: var(--primary) !important;
   color: var(--primary-foreground) !important;
 }
+
+.drawer-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 12px 0;
+}
+
+.drawer-nav a.logout-btn {
+  color: var(--destructive) !important;
+  margin-top: auto !important;
+}
+
+.drawer-nav a.logout-btn:hover {
+  background: color-mix(in oklch, var(--destructive) 15%, transparent) !important;
+  color: var(--destructive) !important;
+}
+
 
 
