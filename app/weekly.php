@@ -166,12 +166,25 @@ function compute_row($empCode, &$punches)
     <input type="checkbox" id="drawer-toggle" class="drawer-checkbox">
     <nav class="topbar">
         <span class="brand">Absensi Monitor</span>
-        <label class="hamburger" for="drawer-toggle">
-            <svg viewBox="0 0 32 32">
-                <path class="line line-top-bottom" d="M27 10 13 10C10.8 10 9 8.2 9 6 9 3.5 10.8 2 13 2 15.2 2 17 3.8 17 6L17 26C17 28.2 15.2 30 13 30 10.8 30 9 28.2 9 26 9 23.8 10.8 22 13 22L27 22"></path>
-                <path class="line" d="M7 16 27 16"></path>
+        <div class="container-input">
+            <input type="text" id="empSearchInput" placeholder="Cari..." class="input" autocomplete="off">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-        </label>
+        </div>
+        <div class="topbar-right" style="display:flex;align-items:center;gap:10px">
+            <label class="theme-switch-btn" for="theme-popup-checkbox" title="Pilih Tema">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                <span class="theme-btn-label">Tema</span>
+            </label>
+            <label class="hamburger" for="drawer-toggle">
+                <svg viewBox="0 0 32 32">
+                    <path class="line line-top-bottom" d="M27 10 13 10C10.8 10 9 8.2 9 6 9 3.5 10.8 2 13 2 15.2 2 17 3.8 17 6L17 26C17 28.2 15.2 30 13 30 10.8 30 9 28.2 9 26 9 23.8 10.8 22 13 22L27 22"></path>
+                    <path class="line" d="M7 16 27 16"></path>
+                </svg>
+            </label>
+        </div>
     </nav>
 
     <!-- SLIDE-OVER DRAWER -->
@@ -273,7 +286,11 @@ function compute_row($empCode, &$punches)
                     ?>
                     <tr>
                         <td class="emp-no"><?= $no++ ?></td>
-                        <td class="emp-name"><?= e($emp['first_name']) ?></td>
+                        <td class="emp-name">
+                            <a class="emp-click-link" data-code="<?= e($emp['emp_code']) ?>" data-name="<?= e($emp['first_name']) ?>" data-dept="<?= e($dept) ?>" href="javascript:void(0)" title="Klik untuk lihat riwayat detail">
+                                <?= e($emp['first_name']) ?>
+                            </a>
+                        </td>
                         <?php foreach ($dayOrder as $k): $c = $row[$k]; ?>
                             <td style="background:<?= e($c['inColor']) ?>"><?= $c['in'] !== null ? e($c['in']) : '' ?></td>
                             <td style="background:<?= e($c['outColor']) ?>"><?= e($c['outT']) ?></td>
@@ -301,6 +318,46 @@ function compute_row($empCode, &$punches)
             <span class="sum-val">Rp <?= number_format($grandTotal, 0, ',', '.') ?></span>
         </div>
     </main>
+
+    <!-- BACK TO TOP FLOATING BUTTON -->
+    <button type="button" class="back-to-top" id="backToTopBtn" aria-label="Kembali ke atas">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+    </button>
+
+    <!-- EMPLOYEE DETAIL MODAL -->
+    <div class="emp-modal-overlay" id="empModalOverlay" role="dialog" aria-modal="true">
+        <div class="emp-modal-box">
+            <div class="emp-modal-header">
+                <div class="emp-profile-meta">
+                    <div class="emp-avatar-circle" id="modalAvatar">E</div>
+                    <div>
+                        <h3 class="emp-info-title" id="modalEmpName">Nama Karyawan</h3>
+                        <div class="emp-info-sub">
+                            <span id="modalEmpDept">Departemen</span> · ID: <span id="modalEmpCode">1001</span>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="emp-modal-close-btn" id="modalCloseBtn" aria-label="Tutup">&times;</button>
+            </div>
+            <div class="emp-modal-filter-bar">
+                <form id="modalDateFilterForm" class="modal-filter-form">
+                    <div class="filter-input-group">
+                        <label for="modalStartDate">Dari:</label>
+                        <input type="date" id="modalStartDate" class="modal-date-input">
+                    </div>
+                    <div class="filter-input-group">
+                        <label for="modalEndDate">s/d:</label>
+                        <input type="date" id="modalEndDate" class="modal-date-input">
+                    </div>
+                    <button type="submit" class="modal-filter-btn">Filter</button>
+                    <button type="button" id="modalResetFilterBtn" class="modal-reset-btn" title="Reset filter tanggal">Reset</button>
+                </form>
+            </div>
+            <div class="emp-modal-body" id="modalBody">
+                <div class="emp-loading-skeleton">Memuat data riwayat...</div>
+            </div>
+        </div>
+    </div>
 
     <script>
         function move(days) {
@@ -347,6 +404,265 @@ function compute_row($empCode, &$punches)
 
             if (overlay) overlay.addEventListener('click', closeDrawer);
             if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+
+            // === NAVBAR FLOAT ON SCROLL (Relaxed threshold & less sensitive) ===
+            var nav = document.querySelector('.topbar');
+            if (nav) {
+                var ticking = false;
+                var isScrolled = false;
+                window.addEventListener('scroll', function () {
+                    if (!ticking) {
+                        window.requestAnimationFrame(function() {
+                            var scrollY = window.scrollY || window.pageYOffset;
+                            if (!isScrolled && scrollY > 90) {
+                                nav.classList.add('scrolled');
+                                isScrolled = true;
+                            } else if (isScrolled && scrollY < 30) {
+                                nav.classList.remove('scrolled');
+                                isScrolled = false;
+                            }
+                            ticking = false;
+                        });
+                        ticking = true;
+                    }
+                }, { passive: true });
+            }
+        })();
+
+        // === BACK TO TOP BUTTON LOGIC ===
+        (function() {
+            var btn = document.getElementById('backToTopBtn');
+            if (!btn) return;
+            window.addEventListener('scroll', function() {
+                if ((window.scrollY || window.pageYOffset) > 250) {
+                    btn.classList.add('visible');
+                } else {
+                    btn.classList.remove('visible');
+                }
+            }, { passive: true });
+            btn.addEventListener('click', function() {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        })();
+
+        // === EMPLOYEE DETAIL MODAL LOGIC (Paginated & Date Range Filter) ===
+        (function() {
+            var overlay = document.getElementById('empModalOverlay');
+            var closeBtn = document.getElementById('modalCloseBtn');
+            var avatar = document.getElementById('modalAvatar');
+            var nameEl = document.getElementById('modalEmpName');
+            var deptEl = document.getElementById('modalEmpDept');
+            var codeEl = document.getElementById('modalEmpCode');
+            var bodyEl = document.getElementById('modalBody');
+            var filterForm = document.getElementById('modalDateFilterForm');
+            var startDateInput = document.getElementById('modalStartDate');
+            var endDateInput = document.getElementById('modalEndDate');
+            var resetFilterBtn = document.getElementById('modalResetFilterBtn');
+
+            var currentCode = '';
+            var currentOffset = 0;
+            var isLoading = false;
+            var hasMore = false;
+
+            function openModal(code, name, dept) {
+                if (!overlay) return;
+                currentCode = code;
+                currentOffset = 0;
+                isLoading = false;
+                hasMore = false;
+
+                if (startDateInput) startDateInput.value = '';
+                if (endDateInput) endDateInput.value = '';
+
+                var initials = name ? name.trim().charAt(0).toUpperCase() : 'E';
+                avatar.textContent = initials;
+                nameEl.textContent = name || 'Karyawan';
+                deptEl.textContent = dept || '-';
+                codeEl.textContent = code || '-';
+                bodyEl.innerHTML = '<div class="emp-loading-skeleton">🔄 Memuat riwayat absensi...</div>';
+                
+                overlay.classList.add('active');
+
+                loadHistoryBatch(true);
+            }
+
+            function loadHistoryBatch(isInitial) {
+                if (isLoading || !currentCode) return;
+                isLoading = true;
+
+                if (!isInitial) {
+                    var btn = document.getElementById('loadMoreHistoryBtn');
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.textContent = '🔄 Memuat data...';
+                    }
+                }
+
+                var url = 'api_history.php?code=' + encodeURIComponent(currentCode) + '&offset=' + currentOffset;
+                var sDate = startDateInput ? startDateInput.value : '';
+                var eDate = endDateInput ? endDateInput.value : '';
+                if (sDate) url += '&start_date=' + encodeURIComponent(sDate);
+                if (eDate) url += '&end_date=' + encodeURIComponent(eDate);
+
+                fetch(url)
+                    .then(function(res) { return res.json(); })
+                    .then(function(data) {
+                        isLoading = false;
+                        if (!data.success) {
+                            if (isInitial) {
+                                bodyEl.innerHTML = '<div class="emp-loading-skeleton" style="color:var(--destructive)">❌ ' + (data.error || 'Gagal memuat data') + '</div>';
+                            }
+                            return;
+                        }
+
+                        hasMore = data.has_more;
+                        currentOffset = data.next_offset;
+
+                        if (isInitial) {
+                            if (!data.history || data.history.length === 0) {
+                                bodyEl.innerHTML = '<div class="emp-loading-skeleton">Tidak ada riwayat absensi pada rentang tanggal ini.</div>';
+                                return;
+                            }
+
+                            var dateRangeInfo = '';
+                            if (sDate || eDate) {
+                                dateRangeInfo = ' (Filter: ' + (sDate || 'Awal') + ' s/d ' + (eDate || 'Sekarang') + ')';
+                            }
+
+                            var summaryHeader = '<div class="history-summary-tag">📅 Total ' + data.total_days + ' hari terekam' + dateRangeInfo + '</div>';
+                            bodyEl.innerHTML = summaryHeader + '<div class="emp-history-list" id="empHistoryList"></div>';
+                        }
+
+                        var listContainer = document.getElementById('empHistoryList');
+                        if (listContainer) {
+                            data.history.forEach(function(item) {
+                                var statusBadge = '';
+                                if (item.status === 'hadir') {
+                                    statusBadge = '<span class="badge st-hadir">Hadir</span>';
+                                } else if (item.status === 'telat') {
+                                    statusBadge = '<span class="badge st-telat">+' + item.late + ' m</span>';
+                                } else {
+                                    statusBadge = '<span class="badge st-belum">Belum</span>';
+                                }
+
+                                var cardEl = document.createElement('div');
+                                cardEl.className = 'emp-history-card';
+                                cardEl.innerHTML = 
+                                    '<div class="history-date-box">' +
+                                        '<span class="history-date-main">' + item.date_formatted + '</span>' +
+                                        '<span class="history-day-sub">' + item.day_name + '</span>' +
+                                    '</div>' +
+                                    '<div class="history-punches-box">' +
+                                        '<div class="history-punch-item"><span class="punch-label">Masuk</span><span class="punch-value">' + item.in + '</span></div>' +
+                                        '<div class="history-punch-item"><span class="punch-label">Keluar</span><span class="punch-value">' + item.out + '</span></div>' +
+                                        statusBadge +
+                                    '</div>';
+                                listContainer.appendChild(cardEl);
+                            });
+                        }
+
+                        // Remove old load more button if exists
+                        var oldBtn = document.getElementById('loadMoreHistoryBtn');
+                        if (oldBtn) oldBtn.remove();
+
+                        // Append load more button if there are more records
+                        if (hasMore) {
+                            var loadMoreBtn = document.createElement('button');
+                            loadMoreBtn.type = 'button';
+                            loadMoreBtn.id = 'loadMoreHistoryBtn';
+                            loadMoreBtn.className = 'load-more-btn';
+                            loadMoreBtn.innerHTML = '⬇️ Muat Riwayat Lebih Lama';
+                            loadMoreBtn.addEventListener('click', function() {
+                                loadHistoryBatch(false);
+                            });
+                            bodyEl.appendChild(loadMoreBtn);
+                        }
+                    })
+                    .catch(function(err) {
+                        isLoading = false;
+                        if (isInitial) {
+                            bodyEl.innerHTML = '<div class="emp-loading-skeleton" style="color:var(--destructive)">❌ Gagal terhubung ke server</div>';
+                        }
+                    });
+            }
+
+            function closeModal() {
+                if (overlay) overlay.classList.remove('active');
+            }
+
+            if (filterForm) {
+                filterForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    currentOffset = 0;
+                    bodyEl.innerHTML = '<div class="emp-loading-skeleton">🔄 Memfilter data...</div>';
+                    loadHistoryBatch(true);
+                });
+            }
+
+            if (resetFilterBtn) {
+                resetFilterBtn.addEventListener('click', function() {
+                    if (startDateInput) startDateInput.value = '';
+                    if (endDateInput) endDateInput.value = '';
+                    currentOffset = 0;
+                    bodyEl.innerHTML = '<div class="emp-loading-skeleton">🔄 Memuat riwayat absensi...</div>';
+                    loadHistoryBatch(true);
+                });
+            }
+
+            // Click listener for employee names
+            document.addEventListener('click', function(e) {
+                var link = e.target.closest('.emp-click-link');
+                if (link) {
+                    e.preventDefault();
+                    var code = link.getAttribute('data-code');
+                    var name = link.getAttribute('data-name');
+                    var dept = link.getAttribute('data-dept');
+                    openModal(code, name, dept);
+                }
+            });
+
+            if (closeBtn) closeBtn.addEventListener('click', closeModal);
+            if (overlay) {
+                overlay.addEventListener('click', function(e) {
+                    if (e.target === overlay) closeModal();
+                });
+            }
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') closeModal();
+            });
+
+            // Infinite scroll inside modal body when reaching bottom
+            if (bodyEl) {
+                bodyEl.addEventListener('scroll', function() {
+                    if (!hasMore || isLoading) return;
+                    if (bodyEl.scrollTop + bodyEl.clientHeight >= bodyEl.scrollHeight - 50) {
+                        loadHistoryBatch(false);
+                    }
+                }, { passive: true });
+            }
+        })();
+
+        // === QUICK REAL-TIME EMPLOYEE SEARCH ===
+        (function() {
+            var input = document.getElementById('empSearchInput');
+            if (!input) return;
+            input.addEventListener('input', function() {
+                var query = this.value.toLowerCase().trim();
+                var rows = document.querySelectorAll('.tbl.weekly tbody tr');
+                rows.forEach(function(tr) {
+                    if (tr.classList.contains('dept-row') || tr.classList.contains('dept-total')) {
+                        return;
+                    }
+                    var nameEl = tr.querySelector('.emp-name');
+                    var nameText = nameEl ? nameEl.textContent.toLowerCase() : '';
+                    if (query === '' || nameText.indexOf(query) !== -1) {
+                        tr.style.display = '';
+                    } else {
+                        tr.style.display = 'none';
+                    }
+                });
+            });
         })();
     </script>
 </body>
