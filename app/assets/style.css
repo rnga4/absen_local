@@ -1041,32 +1041,53 @@ h2.dept-title {
 .topbar .nav-right {
   display: none;
   position: absolute !important;
-  top: calc(100% + 8px) !important;
+  top: calc(100% + 6px) !important;
   right: 16px !important;
   flex-direction: column !important;
   align-items: stretch !important;
-  gap: 6px !important;
-  background: var(--card, #1e1e2e) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
+  gap: 4px !important;
+  background: color-mix(in oklch, var(--card) 96%, transparent) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
   border: 1px solid var(--border) !important;
-  border-radius: 16px !important;
-  padding: 10px !important;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.3) !important;
+  border-radius: 14px !important;
+  padding: 6px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.22) !important;
   z-index: 9999 !important;
-  min-width: 190px !important;
+  width: 160px !important;
+  min-width: 160px !important;
+  max-width: 180px !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 600px) {
+  .topbar .nav-right {
+    right: 12px !important;
+    top: calc(100% + 4px) !important;
+    width: 150px !important;
+    min-width: 150px !important;
+    padding: 6px !important;
+    gap: 3px !important;
+    border-radius: 12px !important;
+  }
+  .topbar .nav-right a,
+  .topbar .nav-right .theme-switch-btn {
+    padding: 7px 10px !important;
+    font-size: 0.78rem !important;
+    border-radius: 6px !important;
+  }
 }
 
 .topbar:has(.hamburger input:checked) .nav-right,
 .topbar .nav-right.open {
   display: flex !important;
-  animation: navSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: navSlideDown 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes navSlideDown {
   from {
     opacity: 0;
-    transform: translateY(-8px) scale(0.96);
+    transform: translateY(-6px) scale(0.95);
   }
   to {
     opacity: 1;
@@ -1079,9 +1100,9 @@ h2.dept-title {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  padding: 10px 14px !important;
-  border-radius: 10px !important;
-  font-size: 0.88rem !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  font-size: 0.82rem !important;
   font-weight: 600 !important;
   color: var(--foreground) !important;
   text-decoration: none !important;
@@ -1091,6 +1112,7 @@ h2.dept-title {
   width: 100% !important;
   box-sizing: border-box !important;
   margin: 0 !important;
+  white-space: nowrap !important;
 }
 
 .topbar .nav-right a:hover,
@@ -1104,4 +1126,5 @@ h2.dept-title {
   background: var(--primary) !important;
   color: var(--primary-foreground) !important;
 }
+
 
