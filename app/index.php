@@ -49,7 +49,14 @@ foreach ($employees as $emp) {
 <body>
     <nav class="topbar">
         <span class="brand">Absensi Monitor</span>
-        <span class="nav-right">
+        <label class="hamburger">
+            <input type="checkbox" id="burger-toggle">
+            <svg viewBox="0 0 32 32">
+                <path class="line line-top-bottom" d="M27 10 13 10C10.8 10 9 8.2 9 6 9 3.5 10.8 2 13 2 15.2 2 17 3.8 17 6L17 26C17 28.2 15.2 30 13 30 10.8 30 9 28.2 9 26 9 23.8 10.8 22 13 22L27 22"></path>
+                <path class="line" d="M7 16 27 16"></path>
+            </svg>
+        </label>
+        <div class="nav-right" id="navMenu">
             <a class="active" href="index.php"><span class="nav-label">Dashboard</span></a>
             <a href="weekly.php"><span class="nav-label">Mingguan</span></a>
             <label class="theme-switch-btn" for="theme-popup-checkbox">
@@ -58,7 +65,7 @@ foreach ($employees as $emp) {
             </label>
             <a href="public.php" target="_blank"><span class="nav-label">Publik</span></a>
             <a href="logout.php"><span class="nav-label">Keluar</span></a>
-        </span>
+        </div>
     </nav>
 
     <div class="theme-popup" id="themeSwitcher">
@@ -160,6 +167,16 @@ foreach ($employees as $emp) {
             var nav = document.querySelector('.topbar');
             if (window.scrollY > 60) nav.classList.add('scrolled');
             else nav.classList.remove('scrolled');
+        });
+
+        // === HAMBURGER CLICK OUTSIDE CLOSE ===
+        document.addEventListener('click', function (e) {
+            var burger = document.getElementById('burger-toggle');
+            var navMenu = document.getElementById('navMenu');
+            if (burger && burger.checked && !e.target.closest('.topbar')) {
+                burger.checked = false;
+                if (navMenu) navMenu.classList.remove('open');
+            }
         });
     </script>
 </body>
