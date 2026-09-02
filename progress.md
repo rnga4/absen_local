@@ -94,7 +94,17 @@ absensi-web/
 - [x] Index `idx_punch_time` sudah ada (`uniq_absen`)
 - [x] Telegram timeout 3s (non-blocking relatif)
 - [x] CSS compact tabel, badge seragam
-- [x] Mobile responsive: navbar scroll horizontal, font compact
+### Laporan Mingguan & Modal Detail
+- [x] Perbaikan syntax error pada `weekly.php` (PHP & JS unclosed tags)
+- [x] Modal detail karyawan dengan infinite scroll & filter rentang tanggal
+- [x] Tampilan nama karyawan mobile yang responsif (word-wrap 2 baris alami tanpa terpotong)
+
+### Header & UI iOS Liquid Glass
+- [x] Header topbar dengan efek iOS/visionOS Liquid Glass (translucent gradient, blur 28px–32px, saturation 210%, dual rim light)
+- [x] Search bar Uiverse (garerim design) diletakkan di tengah header (centered) dengan animasi expand
+- [x] Tombol pilih tema diletakkan di header kanan (sekali klik)
+- [x] Responsive layout header mobile (fluid search, 36px circular glass icons, floating pill dock)
+- [x] Tombol melayang Back to Top diubah menjadi iOS Liquid Glass Floating Orb dengan efek liquid glow hover
 
 ## Yang Belum / Bisa Ditambah 🔲
 - [ ] Rekap bulanan per karyawan (hadir/telat/absen per bulan)
@@ -102,4 +112,3 @@ absensi-web/
 - [ ] Role-based access (admin vs viewer)
 - [ ] Auto-refresh dashboard index (polling tiap N menit)
 - [ ] Notif Telegram hanya kirim jika ada yang belum (sudah) — cek flag agar tidak dobel jika cron dijalankan manual
-- [ ] Halaman detail per karyawan
