@@ -1,0 +1,28 @@
+services:
+  absensi-fpm:
+    build: .
+    container_name: absensi-fpm
+    restart: unless-stopped
+    environment:
+      DB_HOST: 192.168.1.141
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASS: unico@123
+      DB_NAME: fingerprint_absensi
+      APP_USER: UwU
+      APP_PASS: anjir445566
+      TELEGRAM_BOT_TOKEN: "8638300252:AAGSLjHhy3YX2VjoQ3QwmYPGF2A3gyksvxI"
+      TELEGRAM_CHAT_ID: "-5286727622"
+    volumes:
+      - ./app:/var/www/html
+  absensi-nginx:
+    image: nginx:alpine
+    container_name: absensi-nginx
+    restart: unless-stopped
+    depends_on:
+      - absensi-fpm
+    ports:
+      - "9790:80"
+    volumes:
+      - ./app:/var/www/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
