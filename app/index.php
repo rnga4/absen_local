@@ -4,12 +4,16 @@ require_login();
 
 $today = date('Y-m-d');
 $filter = $_GET['f'] ?? '';
-if (!in_array($filter, ['hadir', 'telat', 'belum'], true)) $filter = '';
+if (!in_array($filter, ['hadir', 'telat', 'belum'], true)) {
+    $filter = '';
+}
 
 $employees = active_employees();
 
 $punches = [];
-$st = db()->prepare("SELECT emp_code, punch_time FROM iclock_transaction_backup WHERE punch_time >= :d AND punch_time < DATE_ADD(:d, INTERVAL 1 DAY) ORDER BY punch_time ASC");
+$st = db()->prepare(
+    "SELECT emp_code, punch_time FROM iclock_transaction_backup WHERE DATE(punch_time) = :d ORDER BY punch_time ASC"
+);
 $st->execute([':d' => $today]);
 foreach ($st->fetchAll() as $r) {
     $punches[$r['emp_code']][] = $r['punch_time'];
@@ -23,18 +27,33 @@ foreach ($employees as $emp) {
     $in = $out = null;
     foreach ($list as $pt) {
         $t = date('H:i', strtotime($pt));
-        if ($t <= '13:00' && $in === null) { $in = $t; }
-        elseif ($in !== null && $t > $in)  { $out = $t; }
+        if ($t <= '13:00' && $in === null) {
+            $in = $t;
+        } elseif ($in !== null && $t > $in) {
+            $out = $t;
+        }
     }
     $lateMin = 0;
     if ($in !== null && $in > '08:00') {
         $lateMin = (strtotime('1970-01-01 ' . $in) - strtotime('1970-01-01 08:00')) / 60;
     }
-    $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
+    if ($in === null) {
+        $status = 'belum';
+    } else {
+        $status = $in > '08:00' ? 'telat' : 'hadir';
+    }
     $stat['total']++;
     $stat[$status]++;
-    if ($filter !== '' && $status !== $filter) continue;
-    $rows[$emp['dept_name'] ?? '-'][] = ['name' => $emp['first_name'], 'in' => $in, 'out' => $out, 'status' => $status, 'late' => $lateMin];
+    if ($filter !== '' && $status !== $filter) {
+        continue;
+    }
+    $rows[$emp['dept_name'] ?? '-'][] = [
+        'name'   => $emp['first_name'],
+        'in'     => $in,
+        'out'    => $out,
+        'status' => $status,
+        'late'   => $lateMin,
+    ];
 }
 ?>
 <!DOCTYPE html>
