@@ -6,6 +6,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = trim($_POST['username'] ?? '');
     $pass = $_POST['password'] ?? '';
     if (hash_equals(APP_USER, $user) && hash_equals(APP_PASS, $pass)) {
+        session_regenerate_id(true);
         $_SESSION['logged_in'] = true;
         $_SESSION['username'] = $user;
         header('Location: index.php');
