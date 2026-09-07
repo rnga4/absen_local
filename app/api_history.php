@@ -10,6 +10,14 @@ if ($empCode === '') {
     exit;
 }
 
+// Role guard: employee (akun normal) hanya boleh melihat riwayat dirinya sendiri.
+// Admin (role=admin atau session lama tanpa role) tetap bisa melihat semua.
+$roleNow = $_SESSION['role'] ?? 'admin';
+if ($roleNow === 'employee' && ($_SESSION['emp_code'] ?? '') !== $empCode) {
+    echo json_encode(['success' => false, 'error' => 'Akses ditolak']);
+    exit;
+}
+
 $offset    = max(0, (int)($_GET['offset'] ?? 0));
 $limit     = 30; // 30 hari per halaman
 $startDate = trim($_GET['start_date'] ?? '');
