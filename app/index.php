@@ -2,6 +2,11 @@
 require __DIR__ . '/config.php';
 require_login();
 
+if (($_SESSION['role'] ?? '') === 'employee') {
+    header('Location: employee.php');
+    exit;
+}
+
 $today = date('Y-m-d');
 $filter = $_GET['f'] ?? '';
 if (!in_array($filter, ['hadir', 'telat', 'belum'], true)) {

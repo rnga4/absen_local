@@ -26,8 +26,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['logged_in'] = true;
                 $_SESSION['role'] = $row['role'];
                 $_SESSION['username'] = $row['username'];
+                if (($row['role'] ?? '') === 'employee') {
+                    $ec = $sl->prepare("SELECT emp_code FROM users WHERE username = :u");
+                    $ec->execute([':u' => $user]);
+                    $_SESSION['emp_code'] = $ec->fetchColumn() ?: '';
+                }
                 $loginOk = true;
-                header('Location: index.php');
+                header('Location: ' . (($_SESSION['role'] ?? '') === 'employee' ? 'employee.php' : 'index.php'));
                 exit;
             }
         }

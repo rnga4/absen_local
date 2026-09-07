@@ -2,6 +2,11 @@
 require __DIR__ . '/config.php';
 require_login();
 
+if (($_SESSION['role'] ?? '') === 'employee') {
+    header('Location: employee.php');
+    exit;
+}
+
 $start = $_GET['tanggal'] ?? date('Y-m-d');
 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $start)) {
     $start = date('Y-m-d');
