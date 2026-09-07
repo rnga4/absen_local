@@ -3,18 +3,6 @@ require __DIR__ . '/config.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-function verify_pbkdf2(string $password, string $stored): bool {
-    $parts = explode('$', $stored);
-    if (count($parts) !== 4 || $parts[0] !== 'pbkdf2_sha256') {
-        return false;
-    }
-    $iterations = (int)$parts[1];
-    $salt = $parts[2];
-    $expected = $parts[3];
-    $calc = base64_encode(hash_pbkdf2('sha256', $password, $salt, $iterations, 32, true));
-    return hash_equals($expected, $calc);
-}
-
 function local_db(): ?PDO
 {
     static $pdo = null;

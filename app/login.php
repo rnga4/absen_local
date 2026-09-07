@@ -5,9 +5,38 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = trim($_POST['username'] ?? '');
     $pass = $_POST['password'] ?? '';
-    if (hash_equals(APP_USER, $user) && hash_equals(APP_PASS, $pass)) {
+
+    $sqliteFile = __DIR__ . '/data/users.sqlite';
+    $loginOk = false;
+
+    if (is_file($sqliteFile)) {
+        $sl = new PDO('sqlite:' . $sqliteFile, null, null, [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]);
+        $st = $sl->prepare("SELECT username, password_hash, algo, role FROM users WHERE username = :u AND is_active = 1 LIMIT 1");
+        $st->execute([':u' => $user]);
+        $row = $st->fetch();
+        if ($row) {
+            $ok = $row['algo'] === 'pbkdf2_sha256'
+                ? verify_pbkdf2($pass, $row['password_hash'])
+                : password_verify($pass, $row['password_hash']);
+            if ($ok) {
+                session_regenerate_id(true);
+                $_SESSION['logged_in'] = true;
+                $_SESSION['role'] = $row['role'];
+                $_SESSION['username'] = $row['username'];
+                $loginOk = true;
+                header('Location: index.php');
+                exit;
+            }
+        }
+    }
+
+    if (!$loginOk && hash_equals(APP_USER, $user) && hash_equals(APP_PASS, $pass)) {
         session_regenerate_id(true);
         $_SESSION['logged_in'] = true;
+        $_SESSION['role'] = 'admin';
         $_SESSION['username'] = $user;
         header('Location: index.php');
         exit;
