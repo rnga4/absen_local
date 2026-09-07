@@ -55,58 +55,92 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
     <link rel="stylesheet" href="assets/pl-komatsu-ui-template.css">
     <link rel="stylesheet" href="assets/style.css">
     <style>
-        html { scroll-behavior: smooth; }
+        html { scroll-behavior: smooth; scrollbar-gutter: stable; overflow-y: scroll; }
+        .container { max-width: 720px; }
+
         .profile-header {
             text-align: center;
-            padding: 32px 16px 24px;
+            padding: 8px 0 26px;
         }
         .profile-avatar {
-            width: 80px; height: 80px;
+            width: 84px; height: 84px;
+            margin: 0 auto 16px;
             border-radius: 50%;
-            background: var(--primary);
-            color: #fff;
-            font-size: 2rem; font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), color-mix(in oklch, var(--primary) 70%, #fff));
+            color: var(--primary-foreground);
+            font-family: var(--font-display);
+            font-size: 2.2rem; font-weight: 700;
             display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 14px;
+            box-shadow: 0 8px 24px -6px color-mix(in oklch, var(--primary) 40%, transparent),
+                        inset 0 1.5px 1.5px 0 color-mix(in oklch, #fff 40%, transparent);
+            border: 1px solid color-mix(in oklch, #fff 30%, var(--primary));
         }
-        .profile-name { font-size: 1.4rem; font-weight: 700; margin: 0; }
-        .profile-meta { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
+        .profile-name { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; margin: 0; color: var(--foreground); }
+        .profile-meta { color: var(--muted-foreground); font-size: 0.9rem; margin-top: 6px; }
 
         .today-card {
-            background: var(--card-bg, #fff);
+            background: var(--card);
             border: 1px solid var(--border);
-            border-radius: var(--radius-lg, 14px);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
             padding: 20px;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
-        .today-card h2 { margin: 0 0 14px; font-size: 1.1rem; }
+        .today-card h2 { margin: 0 0 16px; font-size: 1.05rem; color: var(--foreground); }
         .today-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             gap: 12px;
             text-align: center;
         }
-        .today-item .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .today-item .value { font-size: 1.2rem; font-weight: 700; margin-top: 4px; }
-
-        .history-section { margin-top: 24px; }
-        .history-section h2 { font-size: 1.1rem; margin-bottom: 12px; }
-
-        .emp-loading-skeleton {
-            padding: 24px; text-align: center; color: var(--muted);
+        .today-item {
+            background: var(--muted);
+            border-radius: var(--radius-md);
+            padding: 14px 8px;
         }
-        .load-more-btn {
-            display: block; width: 100%; padding: 12px;
-            background: var(--card-bg, #fff); border: 1px solid var(--border);
-            border-radius: var(--radius, 8px); cursor: pointer;
-            font-size: 0.9rem; color: var(--primary); font-weight: 600;
-            margin-top: 12px; text-align: center;
+        .today-item .label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted-foreground); }
+        .today-item .value { font-family: var(--font-mono); font-size: 1.35rem; font-weight: 700; margin-top: 6px; color: var(--foreground); }
+        .today-item .value .badge { font-family: var(--font-sans); font-size: 0.8rem; padding: 6px 14px; }
+
+        .history-section h2 { font-size: 1.05rem; margin-bottom: 12px; color: var(--foreground); }
+        .emp-loading-skeleton { padding: 32px 16px; text-align: center; color: var(--muted-foreground); font-size: 0.9rem; }
+
+        /* Input filter (mirip search di index) */
+        .history-filter {
+            margin-bottom: 14px;
+            position: relative;
+            max-width: 320px;
         }
-        .load-more-btn:hover { background: color-mix(in oklch, var(--primary) 8%, transparent); }
+        .history-filter input {
+            width: 100%;
+            padding: 9px 16px 9px 38px;
+            border-radius: 9999px;
+            border: 1px solid var(--border);
+            background: color-mix(in oklch, var(--card) 72%, transparent);
+            color: var(--foreground);
+            font-family: var(--font-sans);
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
+        }
+        .history-filter input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 22%, transparent);
+        }
+        .history-filter svg {
+            position: absolute;
+            top: 50%;
+            left: 14px;
+            transform: translateY(-50%);
+            color: var(--muted-foreground);
+            pointer-events: none;
+        }
 
         @media (max-width: 480px) {
-            .today-grid { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-            .today-item .value { font-size: 1rem; }
+            .today-grid { gap: 8px; }
+            .today-item .value { font-size: 1.05rem; }
+            .profile-avatar { width: 72px; height: 72px; font-size: 1.8rem; }
         }
     </style>
 </head>
@@ -128,6 +162,7 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
         </div>
     </nav>
 
+    <!-- SLIDE-OVER DRAWER -->
     <div class="drawer-overlay" id="drawerOverlay"></div>
     <aside class="drawer-panel" id="drawerPanel">
         <div class="drawer-header">
@@ -203,11 +238,20 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
 
         <div class="history-section">
             <h2>Riwayat Absensi</h2>
+            <div class="history-filter">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="historySearch" placeholder="Cari tanggal atau hari..." autocomplete="off">
+            </div>
             <div id="historyBody">
                 <div class="emp-loading-skeleton">Memuat riwayat...</div>
             </div>
         </div>
     </main>
+
+    <!-- BACK TO TOP FLOATING BUTTON -->
+    <button type="button" class="back-to-top" id="backToTopBtn" aria-label="Kembali ke atas">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+    </button>
 
     <script>
     (function() {
@@ -234,6 +278,31 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
         });
     })();
 
+    // NAVBAR FLOAT ON SCROLL
+    (function() {
+        var nav = document.querySelector('.topbar');
+        if (!nav) return;
+        var ticking = false;
+        var isScrolled = false;
+        window.addEventListener('scroll', function () {
+            if (!ticking) {
+                window.requestAnimationFrame(function() {
+                    var scrollY = window.scrollY || window.pageYOffset;
+                    if (!isScrolled && scrollY > 90) {
+                        nav.classList.add('scrolled');
+                        isScrolled = true;
+                    } else if (isScrolled && scrollY < 30) {
+                        nav.classList.remove('scrolled');
+                        isScrolled = false;
+                    }
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        }, { passive: true });
+    })();
+
+    // DRAWER CLOSE
     (function() {
         var toggle = document.getElementById('drawer-toggle');
         var overlay = document.getElementById('drawerOverlay');
@@ -243,8 +312,21 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
         if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
     })();
 
+    // BACK TO TOP
+    (function() {
+        var btn = document.getElementById('backToTopBtn');
+        if (!btn) return;
+        window.addEventListener('scroll', function() {
+            if ((window.scrollY || window.pageYOffset) > 250) btn.classList.add('visible');
+            else btn.classList.remove('visible');
+        }, { passive: true });
+        btn.addEventListener('click', function() { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+    })();
+
+    // HISTORY LOAD + SEARCH FILTER
     (function() {
         var bodyEl = document.getElementById('historyBody');
+        var searchInput = document.getElementById('historySearch');
         var empCode = <?= json_encode($empCode) ?>;
         var currentOffset = 0;
         var isLoading = false;
@@ -285,6 +367,7 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
 
                         var card = document.createElement('div');
                         card.className = 'emp-history-card';
+                        card.setAttribute('data-search', (item.date_formatted + ' ' + item.day_name).toLowerCase());
                         card.innerHTML =
                             '<div class="history-date-box">' +
                                 '<span class="history-date-main">' + item.date_formatted + '</span>' +
@@ -309,6 +392,7 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
                         btn.addEventListener('click', function() { loadBatch(false); });
                         bodyEl.appendChild(btn);
                     }
+                    applySearchFilter();
                 })
                 .catch(function() {
                     isLoading = false;
@@ -316,6 +400,18 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
                 });
         }
 
+        function applySearchFilter() {
+            var q = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            var cards = document.querySelectorAll('#historyList .emp-history-card');
+            cards.forEach(function(c) {
+                var hay = c.getAttribute('data-search') || '';
+                c.style.display = (q === '' || hay.indexOf(q) !== -1) ? '' : 'none';
+            });
+            var loadBtn = document.getElementById('loadMoreBtn');
+            if (loadBtn) loadBtn.style.display = (q === '') ? '' : 'none';
+        }
+
+        if (searchInput) searchInput.addEventListener('input', applySearchFilter);
         loadBatch(true);
 
         if (bodyEl) {
