@@ -102,7 +102,58 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
         .today-item .value { font-family: var(--font-mono); font-size: 1.35rem; font-weight: 700; margin-top: 6px; color: var(--foreground); }
         .today-item .value .badge { font-family: var(--font-sans); font-size: 0.8rem; padding: 6px 14px; }
 
-        .history-section h2 { font-size: 1.05rem; margin-bottom: 12px; color: var(--foreground); }
+        .history-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            width: 100%;
+            padding: 16px 20px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            cursor: pointer;
+            font-family: var(--font-display);
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--foreground);
+            text-align: left;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .history-toggle:hover {
+            border-color: color-mix(in oklch, var(--primary) 50%, var(--border));
+        }
+        .history-toggle .toggle-icon {
+            display: inline-flex;
+            width: 28px; height: 28px;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--muted);
+            color: var(--muted-foreground);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, color 0.2s ease;
+            flex-shrink: 0;
+        }
+        .history-section.open .history-toggle {
+            border-color: color-mix(in oklch, var(--primary) 45%, var(--border));
+        }
+        .history-section.open .history-toggle .toggle-icon {
+            transform: rotate(180deg);
+            background: var(--primary);
+            color: var(--primary-foreground);
+        }
+        .history-panel {
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease, margin 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .history-section.open .history-panel {
+            max-height: 1400px;
+            opacity: 1;
+            margin-top: 14px;
+        }
         .emp-loading-skeleton { padding: 32px 16px; text-align: center; color: var(--muted-foreground); font-size: 0.9rem; }
 
         /* Input filter (mirip search di index) */
@@ -236,14 +287,21 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
             </div>
         </div>
 
-        <div class="history-section">
-            <h2>Riwayat Absensi</h2>
-            <div class="history-filter">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" id="historySearch" placeholder="Cari tanggal atau hari..." autocomplete="off">
-            </div>
-            <div id="historyBody">
-                <div class="emp-loading-skeleton">Memuat riwayat...</div>
+        <div class="history-section" id="historySection">
+            <button type="button" class="history-toggle" id="historyToggle" aria-expanded="false" aria-controls="historyPanel">
+                <span>Riwayat Absensi</span>
+                <span class="toggle-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </span>
+            </button>
+            <div class="history-panel" id="historyPanel">
+                <div class="history-filter">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="historySearch" placeholder="Cari tanggal atau hari..." autocomplete="off">
+                </div>
+                <div id="historyBody">
+                    <div class="emp-loading-skeleton">Memuat riwayat...</div>
+                </div>
             </div>
         </div>
     </main>
@@ -323,18 +381,38 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
         btn.addEventListener('click', function() { window.scrollTo({ top: 0, behavior: 'smooth' }); });
     })();
 
-    // HISTORY LOAD + SEARCH FILTER
+    // HISTORY ACCORDION + LAZY LOAD + SEARCH FILTER
     (function() {
+        var section = document.getElementById('historySection');
+        var toggle = document.getElementById('historyToggle');
+        var panel = document.getElementById('historyPanel');
+        
+        if (section && toggle) {
+            toggle.addEventListener('click', function() {
+                var isOpen = section.classList.contains('open');
+                if (isOpen) {
+                    section.classList.remove('open');
+                    toggle.setAttribute('aria-expanded', 'false');
+                } else {
+                    section.classList.add('open');
+                    toggle.setAttribute('aria-expanded', 'true');
+                    if (!historyLoaded) loadBatch(true);
+                }
+            });
+        }
+
         var bodyEl = document.getElementById('historyBody');
         var searchInput = document.getElementById('historySearch');
         var empCode = <?= json_encode($empCode) ?>;
         var currentOffset = 0;
         var isLoading = false;
         var hasMore = false;
+        var historyLoaded = false;
 
         function loadBatch(initial) {
-            if (isLoading) return;
+            if (isLoading || historyLoaded && initial) return;
             isLoading = true;
+            historyLoaded = true;
             if (!initial) {
                 var btn = document.getElementById('loadMoreBtn');
                 if (btn) { btn.disabled = true; btn.textContent = 'Memuat...'; }
@@ -412,7 +490,6 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
         }
 
         if (searchInput) searchInput.addEventListener('input', applySearchFilter);
-        loadBatch(true);
 
         if (bodyEl) {
             bodyEl.addEventListener('scroll', function() {
