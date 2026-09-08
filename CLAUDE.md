@@ -30,8 +30,14 @@ Aplikasi web monitoring absensi ("Absensi Monitor"). PHP murni (tanpa framework/
 ## Profil & Foto
 
 - `profile.php`: upload foto (max 2MB, jpg/png/webp, dimensi ≤4000px) + ganti password (verifikasi password lama, min 6 karakter, konfirmasi, `session_regenerate_id(true)` — **ingat: sesi cookie berubah setelah ganti password**).
+- **JSON API mode** (dipakai aplikasi Android): aktif bila `?format=json`, header `Accept: application/json`, atau `X-Requested-With: XMLHttpRequest`.
+  - `GET profile.php?format=json` → `{ success, name, username, emp_code, dept, role, has_photo, photo_url }`.
+  - `POST profile.php?format=json` `action=password` → validasi sama seperti web, return `{ success, message }` (error → HTTP 400).
+  - `POST profile.php?format=json` multipart `action=photo` + file `photo` → validasi & simpan, return `{ success, message, photo_url }`.
+  - Mode HTML/browser tetap jalan tidak berubah.
 - Foto disimpan di `app/data/photos/{username}.{ext}`. `nginx.conf` **men-deny `/data/`** → foto hanya bisa didapat via `photo.php`.
-- Foto tampil di: `employee.php` (avatar), `index.php` (tabel + modal riwayat), `public.php` (daftar belum absen, via `pub=1`), `profile.php`.
+- `photo.php` juga menerima **`?emp=<emp_code>&pub=1`** (mode publik): mencari username lewat `photo_user_for_emp()`, hanya melayani akun role `employee` — dipakai dashboard publik & aplikasi Android by emp_code.
+- Foto tampil di: `employee.php` (avatar), `index.php` (tabel + modal riwayat), `public.php`, `profile.php`, dan aplikasi Android (halaman profil, index publik, dashboard admin).
 - Setup: `setup_users.php` (schema + migrasi idempotent, termasuk kolom `photo`) dan `seed_employee_users.php` (CLI seed) — keduanya di-`deny` nginx, jalan via `docker exec`.
 
 ## Helper di `app/config.php`

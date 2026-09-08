@@ -2,7 +2,8 @@
 require __DIR__ . '/config.php';
 
 $u = trim($_GET['u'] ?? '');
-if ($u === '') {
+$emp = trim($_GET['emp'] ?? '');
+if ($u === '' && $emp === '') {
     http_response_code(400);
     exit;
 }
@@ -19,7 +20,15 @@ if (!$public) {
         exit('Akses ditolak');
     }
 } else {
-    // Mode publik: hanya foto akun ber-role employee (dipakai dashboard publik).
+    // Mode publik: cari username, boleh via emp_code (dashboard publik).
+    if ($emp !== '') {
+        $u = photo_user_for_emp($emp);
+        if ($u === null) {
+            http_response_code(404);
+            exit;
+        }
+    }
+    // Mode publik: hanya foto akun ber-role employee.
     $row = local_user($u);
     if (!$row || ($row['role'] ?? '') !== 'employee') {
         http_response_code(403);

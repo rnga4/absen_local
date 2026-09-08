@@ -40,7 +40,140 @@ if ($empCode !== '') {
 $hasPhoto = photo_path($username) !== null;
 $photoUrl = $hasPhoto ? ('photo.php?u=' . rawurlencode($username)) : '';
 
-// --- HANDLE POST ---
+// --- JSON API MODE ---
+// Request dari Android (atau header Accept: application/json) akan diberi respons JSON.
+$isApi = false;
+if (isset($_GET['format']) && $_GET['format'] === 'json') {
+    $isApi = true;
+} elseif (($_SERVER['HTTP_ACCEPT'] ?? '') && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) {
+    $isApi = true;
+} elseif (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest') {
+    $isApi = true;
+}
+
+if ($isApi) {
+    header('Content-Type: application/json; charset=utf-8');
+
+    $deptName = $dept ?? '-';
+    $empId    = $empId ?? '-';
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $action = $_POST['action'] ?? '';
+        $err    = null;
+        $ok     = null;
+
+        if ($action === 'photo') {
+            if (empty($_FILES['photo']) || ($_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+                $err = 'Pilih file foto terlebih dahulu.';
+            } else {
+                $f = $_FILES['photo'];
+                if ($f['size'] > 2 * 1024 * 1024) {
+                    $err = 'Ukuran foto maksimal 2 MB.';
+                } else {
+                    $info = @getimagesize($f['tmp_name']);
+                    if ($info === false) {
+                        $err = 'File bukan gambar yang valid.';
+                    } elseif ($info[0] > 4000 || $info[1] > 4000) {
+                        $err = 'Dimensi gambar terlalu besar (maks 4000x4000 px).';
+                    } else {
+                        $mimeMap = [
+                            'image/jpeg' => 'jpg',
+                            'image/png'  => 'png',
+                            'image/webp' => 'webp',
+                        ];
+                        $mime = $info['mime'];
+                        if (!isset($mimeMap[$mime])) {
+                            $err = 'Format foto harus JPG, PNG, atau WEBP.';
+                        } else {
+                            $ext = $mimeMap[$mime];
+                            $safeUser = preg_replace('/[^A-Za-z0-9_\-]/', '_', $username);
+                            $dest = photo_dir() . '/' . $safeUser . '.' . $ext;
+
+                            $oldPhoto = $user['photo'] ?? '';
+                            if ($oldPhoto !== '' && $oldPhoto !== basename($dest)) {
+                                $old = photo_dir() . '/' . basename($oldPhoto);
+                                if (is_file($old)) {
+                                    @unlink($old);
+                                }
+                            }
+
+                            if (!move_uploaded_file($f['tmp_name'], $dest)) {
+                                $err = 'Gagal menyimpan foto.';
+                            } else {
+                                @chmod($dest, 0660);
+                                $db = local_db();
+                                $st = $db->prepare("UPDATE users SET photo = :p WHERE username = :u");
+                                $st->execute([':p' => basename($dest), ':u' => $username]);
+                                $ok = 'Foto profil berhasil diperbarui.';
+                            }
+                        }
+                    }
+                }
+            }
+            if ($err !== null) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => $err], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+            echo json_encode([
+                'success'   => true,
+                'message'   => $ok,
+                'photo_url' => 'photo.php?u=' . rawurlencode($username),
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        if ($action === 'password') {
+            $cur     = $_POST['current_password'] ?? '';
+            $new     = $_POST['new_password'] ?? '';
+            $confirm = $_POST['confirm_password'] ?? '';
+
+            if ($cur === '' || $new === '' || $confirm === '') {
+                $err = 'Semua kolom password wajib diisi.';
+            } elseif (!verify_user_password($cur, $user['password_hash'], $user['algo'])) {
+                $err = 'Password lama salah.';
+            } elseif (strlen($new) < 6) {
+                $err = 'Password baru minimal 6 karakter.';
+            } elseif ($new !== $confirm) {
+                $err = 'Password baru dan konfirmasi tidak cocok.';
+            } elseif (hash_equals($cur, $new)) {
+                $err = 'Password baru tidak boleh sama dengan password lama.';
+            } else {
+                $db = local_db();
+                $st = $db->prepare("UPDATE users SET password_hash = :h, algo = 'bcrypt' WHERE username = :u");
+                $st->execute([':h' => password_hash($new, PASSWORD_DEFAULT), ':u' => $username]);
+                session_regenerate_id(true);
+                $ok = 'Password berhasil diganti.';
+            }
+            if ($err !== null) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => $err], JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+            echo json_encode(['success' => true, 'message' => $ok], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Aksi tidak dikenal.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    // GET → profil
+    echo json_encode([
+        'success'    => true,
+        'name'       => $name,
+        'username'   => $username,
+        'emp_code'   => $empId,
+        'dept'       => $deptName,
+        'role'       => $roleNow,
+        'has_photo'  => $hasPhoto,
+        'photo_url'  => $hasPhoto ? $photoUrl : null,
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// --- HANDLE POST (HTML/redireksi, untuk browser web) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
