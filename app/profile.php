@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $db = local_db();
                             $st = $db->prepare("UPDATE users SET photo = :p WHERE username = :u");
                             $st->execute([':p' => basename($dest), ':u' => $username]);
-                            flash_set('ok', 'Foto profil berhasil diperbarui.');
+                            flash_set('success', 'Foto profil berhasil diperbarui.');
                             header('Location: profile.php');
                             exit;
                         }
@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         if ($err) {
-            flash_set('err', $err);
+            flash_set('error', $err);
         }
     }
 
@@ -106,21 +106,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $confirm  = $_POST['confirm_password'] ?? '';
 
         if ($cur === '' || $new === '' || $confirm === '') {
-            flash_set('err', 'Semua kolom password wajib diisi.');
+            flash_set('error', 'Semua kolom password wajib diisi.');
         } elseif (!verify_user_password($cur, $user['password_hash'], $user['algo'])) {
-            flash_set('err', 'Password lama salah.');
+            flash_set('error', 'Password lama salah.');
         } elseif (strlen($new) < 6) {
-            flash_set('err', 'Password baru minimal 6 karakter.');
+            flash_set('error', 'Password baru minimal 6 karakter.');
         } elseif ($new !== $confirm) {
-            flash_set('err', 'Password baru dan konfirmasi tidak cocok.');
+            flash_set('error', 'Password baru dan konfirmasi tidak cocok.');
         } elseif (hash_equals($cur, $new)) {
-            flash_set('err', 'Password baru tidak boleh sama dengan password lama.');
+            flash_set('error', 'Password baru tidak boleh sama dengan password lama.');
         } else {
             $db = local_db();
             $st = $db->prepare("UPDATE users SET password_hash = :h, algo = 'bcrypt' WHERE username = :u");
             $st->execute([':h' => password_hash($new, PASSWORD_DEFAULT), ':u' => $username]);
             session_regenerate_id(true);
-            flash_set('ok', 'Password berhasil diganti.');
+            flash_set('success', 'Password berhasil diganti.');
         }
         header('Location: profile.php');
         exit;
@@ -131,8 +131,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 }
-
-$flash = flash_out();
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -230,24 +228,6 @@ $flash = flash_out();
         .btn-primary:active { transform: translateY(0) scale(0.98); }
         .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        .flash-banner {
-            padding: 12px 16px;
-            border-radius: var(--radius-md);
-            margin-bottom: 16px;
-            font-size: 0.88rem;
-            border: 1px solid transparent;
-        }
-        .flash-banner.ok {
-            background: color-mix(in oklch, var(--success) 12%, var(--card));
-            color: var(--success);
-            border-color: color-mix(in oklch, var(--success) 30%, transparent);
-        }
-        .flash-banner.err {
-            background: color-mix(in oklch, var(--destructive) 10%, var(--card));
-            color: var(--destructive);
-            border-color: color-mix(in oklch, var(--destructive) 25%, transparent);
-        }
-
         .divider-box { height: 1px; background: var(--border); margin: 4px 0 20px; }
     </style>
 </head>
@@ -338,12 +318,6 @@ $flash = flash_out();
             <h1 class="profile-name"><?= e($name) ?></h1>
             <div class="profile-meta"><?= e($dept) ?> · ID: <?= e($empId) ?> · <span style="text-transform:capitalize"><?= e($roleNow) ?></span></div>
         </div>
-
-        <?php if ($flash && $flash['type'] === 'ok'): ?>
-            <div class="flash-banner ok">✓ <?= e($flash['text']) ?></div>
-        <?php elseif ($flash && $flash['type'] === 'err'): ?>
-            <div class="flash-banner err">✕ <?= e($flash['text']) ?></div>
-        <?php endif; ?>
 
         <div class="settings-box">
             <h2>Foto Profil</h2>
@@ -442,5 +416,7 @@ $flash = flash_out();
         if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
     })();
     </script>
+    <script src="assets/toast.js"></script>
+    <?= toast_js() ?>
 </body>
 </html>

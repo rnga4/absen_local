@@ -52,6 +52,7 @@ foreach ($employees as $emp) {
     $rows[$emp['dept_name'] ?? '-'][] = [
         'code'   => $emp['emp_code'],
         'name'   => $emp['first_name'],
+        'photo'  => emp_photo_url($emp['emp_code']),
         'in'     => $in,
         'out'    => $out,
         'status' => $status,
@@ -317,8 +318,13 @@ foreach ($employees as $emp) {
                     <tr class="<?= $hidden ? 'hidden-row' : 'visible-row' ?>" data-status="<?= $r['status'] ?>">
                         <td class="col-no"><span class="row-num"><?= $hidden ? '' : $i++ ?></span></td>
                         <td class="col-nama">
-                            <a class="emp-click-link" data-code="<?= e($r['code'] ?? '') ?>" data-name="<?= e($r['name']) ?>" data-dept="<?= e($dept) ?>" href="javascript:void(0)" title="Klik untuk lihat riwayat detail">
-                                <?= e($r['name']) ?>
+                            <a class="emp-click-link" data-code="<?= e($r['code'] ?? '') ?>" data-name="<?= e($r['name']) ?>" data-dept="<?= e($dept) ?>" data-photo="<?= e($r['photo'] ?? '') ?>" href="javascript:void(0)" title="Klik untuk lihat riwayat detail">
+                                <?php if (!empty($r['photo'])): ?>
+                                    <span class="emp-thumb"><img src="<?= e($r['photo']) ?>" alt=""></span>
+                                <?php else: ?>
+                                    <span class="emp-thumb emp-thumb-fallback"><?= strtoupper(mb_substr($r['name'], 0, 1)) ?></span>
+                                <?php endif; ?>
+                                <span class="emp-name-text"><?= e($r['name']) ?></span>
                             </a>
                         </td>
                         <td class="col-masuk"><?= $r['in'] ?? '-' ?></td>
@@ -394,6 +400,9 @@ foreach ($employees as $emp) {
                 if (checkbox) checkbox.checked = false;
                 list.querySelectorAll('label').forEach(function (l) { l.style.outline = ''; });
                 lbl.style.outline = '2px solid var(--primary)';
+                var label = t ? t.replace('theme-', '') : 'Light';
+                label = label.charAt(0).toUpperCase() + label.slice(1);
+                if (window.AppToast) AppToast.info('Tema diubah', 'Tema \u201C' + label + '\u201D aktif.');
             });
         })();
 
@@ -569,7 +578,7 @@ foreach ($employees as $emp) {
             var isLoading = false;
             var hasMore = false;
 
-            function openModal(code, name, dept) {
+            function openModal(code, name, dept, photo) {
                 if (!overlay) return;
                 currentCode = code;
                 currentOffset = 0;
@@ -579,8 +588,12 @@ foreach ($employees as $emp) {
                 if (startDateInput) startDateInput.value = '';
                 if (endDateInput) endDateInput.value = '';
 
-                var initials = name ? name.trim().charAt(0).toUpperCase() : 'E';
-                avatar.textContent = initials;
+                if (photo) {
+                    avatar.innerHTML = '<img src="' + photo + '" alt="' + (name || '') + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+                } else {
+                    var initials = name ? name.trim().charAt(0).toUpperCase() : 'E';
+                    avatar.textContent = initials;
+                }
                 nameEl.textContent = name || 'Karyawan';
                 deptEl.textContent = dept || '-';
                 codeEl.textContent = code || '-';
@@ -722,7 +735,8 @@ foreach ($employees as $emp) {
                     var code = link.getAttribute('data-code');
                     var name = link.getAttribute('data-name');
                     var dept = link.getAttribute('data-dept');
-                    openModal(code, name, dept);
+                    var photo = link.getAttribute('data-photo') || '';
+                    openModal(code, name, dept, photo);
                 }
             });
 
@@ -780,5 +794,7 @@ foreach ($employees as $emp) {
             });
         })();
     </script>
+    <script src="assets/toast.js"></script>
+    <?= toast_js() ?>
 </body>
 </html>

@@ -1,7 +1,6 @@
 <?php
 require __DIR__ . '/config.php';
 
-$error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = trim($_POST['username'] ?? '');
     $pass = $_POST['password'] ?? '';
@@ -32,6 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['emp_code'] = $ec->fetchColumn() ?: '';
                 }
                 $loginOk = true;
+                $displayName = local_user($user)['name'] ?? $user;
+                flash_set('success', 'Login berhasil. Selamat datang, ' . $displayName . '!');
                 header('Location: ' . (($_SESSION['role'] ?? '') === 'employee' ? 'employee.php' : 'index.php'));
                 exit;
             }
@@ -43,10 +44,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['logged_in'] = true;
         $_SESSION['role'] = 'admin';
         $_SESSION['username'] = $user;
+        flash_set('success', 'Login berhasil. Selamat datang, admin!');
         header('Location: index.php');
         exit;
     }
-    $error = 'Username atau password salah.';
+    flash_set('error', 'Username atau password salah.');
 }
 ?>
 <!DOCTYPE html>
@@ -62,7 +64,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="login-box">
         <h1>Absensi Monitor</h1>
         <p class="login-sub">Masuk untuk memantau kehadiran karyawan</p>
-        <?php if ($error): ?><p class="error-banner"><?= e($error) ?></p><?php endif; ?>
         <form method="post" autocomplete="off">
             <label>Username
                 <input type="text" name="username" required autofocus>
@@ -73,5 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit">Masuk</button>
         </form>
     </div>
+    <script src="assets/toast.js"></script>
+    <?= toast_js() ?>
 </body>
 </html>

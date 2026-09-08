@@ -11,7 +11,11 @@ $present = array_column($st->fetchAll(), 'emp_code', 'emp_code');
 $notAbsen = [];
 foreach ($employees as $emp) {
     if (!isset($present[$emp['emp_code']])) {
-        $notAbsen[$emp['dept_name'] ?? '-'][] = $emp['first_name'];
+        $notAbsen[$emp['dept_name'] ?? '-'][] = [
+            'emp_code' => $emp['emp_code'],
+            'name'     => $emp['first_name'],
+            'photo'    => emp_photo_url($emp['emp_code'], true),
+        ];
     }
 }
 $allPresent = empty($notAbsen);
@@ -27,7 +31,7 @@ $total = array_sum(array_map('count', $notAbsen));
     <link rel="stylesheet" href="assets/style.css">
     <style>
         body { overscroll-behavior-y: contain; }
-        .pub-name { font-size: 1.05rem; font-weight: 400; }
+        .pub-name { font-size: 1.05rem; font-weight: 400; display: inline-flex; align-items: center; gap: 8px; }
         .pub-no   { font-size: 0.9rem; color: var(--muted-foreground); }
         .floating-tema {
             position: fixed;
@@ -99,10 +103,17 @@ $total = array_sum(array_map('count', $notAbsen));
                 <tr><th class="pub-no">No</th><th>Nama</th></tr>
             </thead>
             <tbody>
-                <?php foreach ($names as $i => $name): ?>
+                <?php foreach ($names as $i => $emp): ?>
                 <tr>
                     <td style="text-align:center;width:48px" class="pub-no"><?= $i + 1 ?></td>
-                    <td class="pub-name"><?= e($name) ?></td>
+                    <td class="pub-name">
+                        <?php if (!empty($emp['photo'])): ?>
+                            <span class="emp-thumb"><img src="<?= e($emp['photo']) ?>" alt=""></span>
+                        <?php else: ?>
+                            <span class="emp-thumb emp-thumb-fallback"><?= strtoupper(mb_substr($emp['name'], 0, 1)) ?></span>
+                        <?php endif; ?>
+                        <?= e($emp['name']) ?>
+                    </td>
                 </tr>
                 <?php endforeach ?>
             </tbody>

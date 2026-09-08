@@ -124,6 +124,52 @@ function flash_out(): ?array
     return null;
 }
 
+function toast_js(): string
+{
+    $f = flash_out();
+    if ($f === null) {
+        return '';
+    }
+    $type = match ($f['type']) {
+        'success', 'ok'     => 'success',
+        'error', 'err'      => 'error',
+        'warning'           => 'warning',
+        default             => 'info',
+    };
+    $title = json_encode($f['text'], JSON_UNESCAPED_UNICODE);
+    return '<script>if (window.AppToast) AppToast.' . $type . '(' . $title . ');</script>';
+}
+
+// Cari username (login app) yang punya foto & terhubung ke emp_code tertentu.
+function photo_user_for_emp(string $empCode): ?string
+{
+    $db = local_db();
+    if ($db === null) {
+        return null;
+    }
+    $st = $db->prepare(
+        "SELECT username, photo FROM users
+         WHERE emp_code = :ec AND photo IS NOT NULL AND photo <> '' LIMIT 1"
+    );
+    $st->execute([':ec' => $empCode]);
+    $r = $st->fetch();
+    if (!$r) {
+        return null;
+    }
+    $path = photo_dir() . '/' . basename($r['photo']);
+    return is_file($path) ? $r['username'] : null;
+}
+
+// URL foto untuk sebuah emp_code. Jika perlu publik (dashboard publik), set $public.
+function emp_photo_url(string $empCode, bool $public = false): ?string
+{
+    $u = photo_user_for_emp($empCode);
+    if ($u === null) {
+        return null;
+    }
+    return 'photo.php?u=' . rawurlencode($u) . ($public ? '&pub=1' : '');
+}
+
 function active_employees(): array
 {
     return db()->query(

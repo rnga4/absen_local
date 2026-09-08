@@ -343,6 +343,9 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
             if (checkbox) checkbox.checked = false;
             list.querySelectorAll('label').forEach(function (l) { l.style.outline = ''; });
             lbl.style.outline = '2px solid var(--primary)';
+            var label = t ? t.replace('theme-', '') : 'Light';
+            label = label.charAt(0).toUpperCase() + label.slice(1);
+            if (window.AppToast) AppToast.info('Tema diubah', 'Tema \u201C' + label + '\u201D aktif.');
         });
     })();
 
@@ -511,5 +514,7 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
         }
     })();
     </script>
+    <script src="assets/toast.js"></script>
+    <?= toast_js() ?>
 </body>
 </html>
