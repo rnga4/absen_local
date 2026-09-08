@@ -438,6 +438,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <main class="container">
+        <?php breadcrumb([['label' => 'Dashboard', 'href' => ($roleNow === 'employee' ? 'employee.php' : 'index.php')], ['label' => 'Profil & Pengaturan']]); ?>
         <div class="profile-header">
             <div class="avatar-wrap">
                 <div class="profile-avatar" id="avatarBox">

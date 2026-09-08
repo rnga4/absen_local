@@ -180,3 +180,92 @@ function active_employees(): array
          ORDER BY b.dept_name, a.first_name"
     )->fetchAll();
 }
+
+// ---- Like/love dashboard publik (SQLite) ----
+
+function votes_db(): ?PDO
+{
+    return local_db();
+}
+
+function votes_today_counts(): array
+{
+    $db = votes_db();
+    if ($db === null) {
+        return [];
+    }
+    $st = $db->prepare("SELECT emp_code, COUNT(*) AS n FROM votes WHERE vote_date = :d GROUP BY emp_code");
+    $st->execute([':d' => date('Y-m-d')]);
+    $out = [];
+    foreach ($st->fetchAll() as $r) {
+        $out[$r['emp_code']] = (int) $r['n'];
+    }
+    return $out;
+}
+
+function my_votes_today(?string $username): array
+{
+    $db = votes_db();
+    if ($db === null || $username === null || $username === '') {
+        return [];
+    }
+    $st = $db->prepare("SELECT emp_code FROM votes WHERE username = :u AND vote_date = :d");
+    $st->execute([':u' => $username, ':d' => date('Y-m-d')]);
+    $out = [];
+    foreach ($st->fetchAll() as $r) {
+        $out[$r['emp_code']] = true;
+    }
+    return $out;
+}
+
+// Toggle love: sudah ada -> hapus, belum -> tambah. Return array status utk response client.
+function toggle_love(string $username, string $empCode): array
+{
+    $db = votes_db();
+    if ($db === null) {
+        return ['success' => false, 'message' => 'Database lokal tidak tersedia.'];
+    }
+    $today = date('Y-m-d');
+
+    $st = $db->prepare("SELECT id FROM votes WHERE username = :u AND emp_code = :e AND vote_date = :d");
+    $st->execute([':u' => $username, ':e' => $empCode, ':d' => $today]);
+    $existing = $st->fetch();
+
+    if ($existing) {
+        $db->prepare("DELETE FROM votes WHERE id = :id")->execute([':id' => $existing['id']]);
+        $state = 'removed';
+    } else {
+        $db->prepare("INSERT INTO votes (username, emp_code, vote_date) VALUES (:u, :e, :d)")
+            ->execute([':u' => $username, ':e' => $empCode, ':d' => $today]);
+        $state = 'added';
+    }
+
+    $count = votes_today_counts()[$empCode] ?? 0;
+    return [
+        'success'    => true,
+        'state'      => $state,
+        'my_vote'    => $state === 'added',
+        'love_count' => $count,
+    ];
+}
+
+// Breadcrumb: daftar item ['label' => ..., 'href' => ...] (yang terakhir tanpa href = halaman aktif).
+function breadcrumb(array $items): void
+{
+    echo '<nav class="breadcrumb" aria-label="Breadcrumb">';
+    $n = count($items);
+    foreach ($items as $i => $item) {
+        $label = $item['label'];
+        $href  = $item['href'] ?? '';
+        if ($i === $n - 1) {
+            echo '<span class="crumb-current">' . e($label) . '</span>';
+        } elseif ($href !== '') {
+            echo '<a class="crumb-link" href="' . e($href) . '">' . e($label) . '</a>';
+            echo '<span class="crumb-sep">/</span>';
+        } else {
+            echo '<span class="crumb-current">' . e($label) . '</span>';
+            echo '<span class="crumb-sep">/</span>';
+        }
+    }
+    echo '</nav>';
+}

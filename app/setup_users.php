@@ -43,6 +43,32 @@ try {
     echo "migrasi: kolom photo ditambahkan\n";
 }
 
+// Migrasi idempotent: tabel votes (single 'love' per user per emp per hari).
+// Jika schema lama (like/dislike, ada kolom vote_type) terdeteksi, tabel dibuat ulang.
+$oldSql = strtolower((string) $pdo->query("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'votes'")->fetchColumn());
+if ($oldSql !== '' && strpos($oldSql, 'vote_type') !== false) {
+    $pdo->exec("DROP TABLE votes");
+    echo "migrasi: tabel votes dibuat ulang (single love)\n";
+}
+$pdo->exec("
+CREATE TABLE IF NOT EXISTS votes (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    username   TEXT    NOT NULL,
+    emp_code   TEXT    NOT NULL,
+    vote_date  TEXT    NOT NULL,
+    created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+)
+");
+try {
+    $exists = $pdo->query("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_votes_u_e_d'")->fetchColumn();
+    if (!$exists) {
+        $pdo->exec("CREATE UNIQUE INDEX idx_votes_u_e_d ON votes (username, emp_code, vote_date)");
+        echo "migrasi: index votes dibuat\n";
+    }
+} catch (Throwable $e) {
+    echo "migrasi: index votes gagal -> " . $e->getMessage() . "\n";
+}
+
 // Seed admin dari env (idempotent: jalankan ulang aman).
 $hash = password_hash(APP_PASS, PASSWORD_DEFAULT);
 $st = $pdo->prepare("

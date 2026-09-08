@@ -260,6 +260,7 @@ foreach ($employees as $emp) {
     </div>
 
     <main class="container">
+        <?php breadcrumb([['label' => 'Dashboard Publik', 'href' => 'public.php'], ['label' => 'Dashboard']]); ?>
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px">
         <h1 style="margin:0">Kehadiran Hari Ini — <?= date('l, d F Y', strtotime($today)) ?></h1>
         <a href="export.php" class="btn-export">Export CSV</a>

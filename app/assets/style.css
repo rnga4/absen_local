@@ -1698,3 +1698,28 @@ tr.search-hidden {
 
 
 
+
+/* ---------- Breadcrumb ---------- */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--muted-foreground);
+  margin-bottom: 14px;
+}
+.breadcrumb .crumb-link {
+  color: var(--muted-foreground);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.breadcrumb .crumb-link:hover { color: var(--primary); }
+.breadcrumb .crumb-sep {
+  color: color-mix(in oklch, var(--muted-foreground) 50%, transparent);
+  user-select: none;
+}
+.breadcrumb .crumb-current {
+  color: var(--foreground);
+  font-weight: 600;
+}

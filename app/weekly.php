@@ -242,6 +242,7 @@ function compute_row($empCode, &$punches)
     </div>
 
     <main class="container">
+        <?php breadcrumb([['label' => 'Dashboard', 'href' => 'index.php'], ['label' => 'Absensi Mingguan']]); ?>
         <h1>Absensi Mingguan</h1>
 
         <form method="get" class="week-form">
