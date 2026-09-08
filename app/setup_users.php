@@ -29,10 +29,19 @@ CREATE TABLE IF NOT EXISTS users (
                           CHECK (role IN ('admin','employee')),
     emp_code      TEXT,
     name          TEXT,
+    photo         TEXT,
     is_active     INTEGER NOT NULL DEFAULT 1,
     created_at    TEXT    NOT NULL DEFAULT (datetime('now'))
 )
 ");
+
+// Migrasi idempotent: tambah kolom photo kalau belum ada.
+try {
+    $pdo->query("SELECT photo FROM users LIMIT 1");
+} catch (Throwable $e) {
+    $pdo->exec("ALTER TABLE users ADD COLUMN photo TEXT");
+    echo "migrasi: kolom photo ditambahkan\n";
+}
 
 // Seed admin dari env (idempotent: jalankan ulang aman).
 $hash = password_hash(APP_PASS, PASSWORD_DEFAULT);

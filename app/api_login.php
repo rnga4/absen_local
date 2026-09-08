@@ -3,22 +3,6 @@ require __DIR__ . '/config.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-function local_db(): ?PDO
-{
-    static $pdo = null;
-    if ($pdo === null) {
-        $file = __DIR__ . '/data/users.sqlite';
-        if (!is_file($file)) {
-            return null;
-        }
-        $pdo = new PDO('sqlite:' . $file, null, null, [
-            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]);
-    }
-    return $pdo;
-}
-
 // Accept form-encoded (application/x-www-form-urlencoded) or JSON body.
 $raw = file_get_contents('php://input');
 $data = json_decode($raw, true) ?: [];

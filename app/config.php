@@ -54,6 +54,76 @@ function verify_pbkdf2(string $password, string $stored): bool
     return hash_equals($expected, $calc);
 }
 
+function local_db(): ?PDO
+{
+    static $pdo = null;
+    if ($pdo === null) {
+        $file = __DIR__ . '/data/users.sqlite';
+        if (!is_file($file)) {
+            return null;
+        }
+        $pdo = new PDO('sqlite:' . $file, null, null, [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        ]);
+    }
+    return $pdo;
+}
+
+function local_user(string $username): ?array
+{
+    $db = local_db();
+    if ($db === null) {
+        return null;
+    }
+    $st = $db->prepare("SELECT * FROM users WHERE username = :u LIMIT 1");
+    $st->execute([':u' => $username]);
+    return $st->fetch() ?: null;
+}
+
+function verify_user_password(string $password, string $hash, string $algo): bool
+{
+    return $algo === 'pbkdf2_sha256'
+        ? verify_pbkdf2($password, $hash)
+        : password_verify($password, $hash);
+}
+
+function photo_dir(): string
+{
+    $dir = __DIR__ . '/data/photos';
+    if (!is_dir($dir)) {
+        mkdir($dir, 0770, true);
+    }
+    return $dir;
+}
+
+function photo_path(string $username): ?string
+{
+    $user = local_user($username);
+    $photo = $user['photo'] ?? '';
+    if ($photo === '') {
+        return null;
+    }
+    $base = basename(photo_dir() . '/' . $photo);
+    $path = photo_dir() . '/' . $base;
+    return is_file($path) ? $path : null;
+}
+
+function flash_set(string $type, string $text): void
+{
+    $_SESSION['flash'] = ['type' => $type, 'text' => $text];
+}
+
+function flash_out(): ?array
+{
+    if (!empty($_SESSION['flash'])) {
+        $f = $_SESSION['flash'];
+        unset($_SESSION['flash']);
+        return $f;
+    }
+    return null;
+}
+
 function active_employees(): array
 {
     return db()->query(
