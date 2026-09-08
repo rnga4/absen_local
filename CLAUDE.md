@@ -7,8 +7,9 @@ Aplikasi web monitoring absensi ("Absensi Monitor"). PHP murni (tanpa framework/
 - Container: `absensi-nginx` (port **9790**) + `absensi-fpm` (php:8.3-fpm-alpine).
 - Folder `app/` di-mount sebagai volume ke `/var/www/html` → **cukup edit file lalu reload browser, TIDAK perlu rebuild**.
 - PHP alpine **tanpa GD/imagick/exif** → validasi gambar memakai `getimagesize()` (tanpa resize).
-- Tema: token OKLCH di `app/assets/pl-komatsu-ui-template.css` (`--background`, `--card`, `--muted`, `--foreground`, `--border`, `--success`, `--destructive`, `--primary`, dsb). Ganti tema via class `body` (`dark`, `theme-sakura`, ...), persist di `localStorage('absensi-theme')`. Tombol ganti tema terletak di topbar.
+- Tema: token OKLCH di `app/assets/pl-komatsu-ui-template.css` (`--background`, `--card`, `--muted`, `--foreground`, `--border`, `--success`, `--destructive`, `--primary`, dsb). Ganti tema via class `body` (`dark`, `theme-sakura`, ...), persist di `localStorage('absensi-theme')`. Tombol ganti tema terletak 1x di topbar secara konsisten.
 - Layout Width: Halaman publik (`public.php`), dashboard karyawan (`employee.php`), dan profil (`profile.php`) menggunakan lebar kontainer konsisten (`.container { max-width: 720px; }`).
+- Animasi Transisi & Navigasi: Animasi halaman halus saat berpindah menu (`pageEnter` blur-fade scale-in & `pageExit` slide-fade out via handler `assets/toast.js` & CSS `@view-transition` / keyframes di `assets/style.css`), plus micro-interactions pada menu drawer (`translateX(4px)` & active scale compression).
 
 ## Database
 

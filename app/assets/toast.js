@@ -91,4 +91,29 @@
         info: function (title, desc) { show('info', title || 'Info', desc); },
         warning: function (title, desc) { show('warning', title || 'Peringatan', desc); }
     };
+
+    // Smooth page transition handler on menu / internal link navigation
+    document.addEventListener('click', function (e) {
+        var link = e.target.closest('a[href]');
+        if (!link) return;
+        var href = link.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:') || link.getAttribute('target') === '_blank') return;
+        if (e.ctrlKey || e.shiftKey || e.metaKey || e.altKey) return;
+
+        var targetUrl;
+        try {
+            targetUrl = new URL(href, window.location.href);
+        } catch (err) {
+            return;
+        }
+
+        if (targetUrl.origin !== window.location.origin) return;
+        if (targetUrl.pathname === window.location.pathname && targetUrl.search === window.location.search) return;
+
+        e.preventDefault();
+        document.body.classList.add('page-leaving');
+        setTimeout(function () {
+            window.location.href = targetUrl.href;
+        }, 160);
+    });
 })();

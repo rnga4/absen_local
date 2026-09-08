@@ -1723,3 +1723,83 @@ tr.search-hidden {
   color: var(--foreground);
   font-weight: 600;
 }
+
+/* =====================================================================
+   PAGE & MENU TRANSITIONS (Smooth Animations)
+   ===================================================================== */
+
+@view-transition {
+  navigation: auto;
+}
+
+@keyframes pageEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.988);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes pageExit {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.985);
+    filter: blur(3px);
+  }
+}
+
+.container, main {
+  animation: pageEnter 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity, filter;
+}
+
+body.page-leaving .container,
+body.page-leaving main {
+  animation: pageExit 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  pointer-events: none;
+}
+
+/* Micro-interactions for drawer and topbar menu items */
+.drawer-nav a {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.18s ease,
+              color 0.18s ease,
+              box-shadow 0.18s ease;
+}
+
+.drawer-nav a:hover {
+  transform: translateX(4px);
+}
+
+.drawer-nav a:active {
+  transform: scale(0.97);
+}
+
+.topbar .nav-right a,
+.pub-avatar-btn,
+.theme-switch-btn,
+.pub-profile-btn {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.18s ease,
+              color 0.18s ease,
+              border-color 0.18s ease,
+              box-shadow 0.18s ease;
+}
+
+.topbar .nav-right a:active,
+.pub-avatar-btn:active,
+.theme-switch-btn:active,
+.pub-profile-btn:active {
+  transform: scale(0.95);
+}
+
