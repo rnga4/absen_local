@@ -159,6 +159,7 @@ if ($isApi) {
         exit;
     }
 
+    $empLoveCount = ($empCode !== '') ? (votes_today_counts()[$empCode] ?? 0) : 0;
     // GET → profil
     echo json_encode([
         'success'    => true,
@@ -169,6 +170,7 @@ if ($isApi) {
         'role'       => $roleNow,
         'has_photo'  => $hasPhoto,
         'photo_url'  => $hasPhoto ? $photoUrl : null,
+        'love_count' => (int) $empLoveCount,
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }

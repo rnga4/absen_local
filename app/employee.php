@@ -265,10 +265,16 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
 
     <main class="container">
         <?php breadcrumb([['label' => 'Dashboard Publik', 'href' => 'public.php'], ['label' => 'Absensi Saya']]); ?>
+        <?php $empLoveCount = votes_today_counts()[$empCode] ?? 0; ?>
         <div class="profile-header">
             <div class="profile-avatar"><?php if ($hasPhoto): ?><img src="<?= e($photoUrl) ?>" alt="<?= e($empName) ?>"><?php else: ?><?= strtoupper(mb_substr($empName, 0, 1)) ?><?php endif; ?></div>
             <h1 class="profile-name"><?= e($empName) ?></h1>
             <div class="profile-meta"><?= e($empDept) ?> · ID: <?= e($empId) ?></div>
+            <div style="margin-top:10px;">
+                <span style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;background:color-mix(in oklch, #ef4444 12%, transparent);color:#dc2626;font-weight:700;font-size:0.88rem;border:1px solid color-mix(in oklch, #ef4444 30%, transparent);">
+                    ❤️ <?= (int)$empLoveCount ?>
+                </span>
+            </div>
         </div>
 
         <div class="today-card">

@@ -22,6 +22,16 @@ $allPresent = empty($notAbsen);
 $total = array_sum(array_map('count', $notAbsen));
 
 $voteCounts = votes_today_counts();
+$maxVoteCount = 0;
+$topVotedEmpCode = null;
+if (!empty($voteCounts)) {
+    foreach ($voteCounts as $eCode => $cnt) {
+        if ($cnt > $maxVoteCount) {
+            $maxVoteCount = $cnt;
+            $topVotedEmpCode = $eCode;
+        }
+    }
+}
 $myVotes    = my_votes_today($_SESSION['username'] ?? null);
 
 $loggedIn     = !empty($_SESSION['logged_in']);
@@ -228,15 +238,24 @@ unset($_SESSION['open_profile']);
             </thead>
             <tbody>
                 <?php foreach ($names as $i => $emp): ?>
-                <?php $loveCount = $voteCounts[$emp['emp_code']] ?? 0; $hasLoved = !empty($myVotes[$emp['emp_code']]); ?>
+                <?php 
+                    $loveCount = $voteCounts[$emp['emp_code']] ?? 0; 
+                    $hasLoved = !empty($myVotes[$emp['emp_code']]);
+                    $isTopVoted = ($topVotedEmpCode !== null && (string)$emp['emp_code'] === (string)$topVotedEmpCode && $loveCount > 0);
+                ?>
                 <tr data-emp="<?= e($emp['emp_code']) ?>">
                     <td style="text-align:center;width:48px" class="pub-no"><?= $i + 1 ?></td>
                     <td class="pub-name">
-                        <?php if (!empty($emp['photo'])): ?>
-                            <span class="emp-thumb"><img src="<?= e($emp['photo']) ?>" alt=""></span>
-                        <?php else: ?>
-                            <span class="emp-thumb emp-thumb-fallback"><?= strtoupper(mb_substr($emp['name'], 0, 1)) ?></span>
-                        <?php endif; ?>
+                        <span class="emp-thumb-wrapper" style="position:relative;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-right:8px;">
+                            <?php if ($isTopVoted): ?>
+                                <span class="crown-badge" style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);font-size:15px;line-height:1;z-index:2;pointer-events:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.3));">👑</span>
+                            <?php endif; ?>
+                            <?php if (!empty($emp['photo'])): ?>
+                                <span class="emp-thumb"><img src="<?= e($emp['photo']) ?>" alt=""></span>
+                            <?php else: ?>
+                                <span class="emp-thumb emp-thumb-fallback"><?= strtoupper(mb_substr($emp['name'], 0, 1)) ?></span>
+                            <?php endif; ?>
+                        </span>
                         <?= e($emp['name']) ?>
                     </td>
                     <td style="text-align:right;white-space:nowrap">
@@ -271,6 +290,27 @@ unset($_SESSION['open_profile']);
         </div>
     </div>
 
+        <!-- MODAL PRATINJAU FOTO KARYAWAN (BISA DIZOOM PERBESAR/PERKECIL) -->
+    <div id="empPhotoModal" class="modal-backdrop">
+        <div class="modal-box" style="max-width:380px;text-align:center;padding:20px;position:relative;">
+            <button type="button" id="empPhotoCloseBtn" style="position:absolute;top:10px;right:14px;background:none;border:none;font-size:1.6rem;cursor:pointer;color:var(--foreground);line-height:1;">&times;</button>
+            <h3 id="empPhotoName" style="margin:0 0 4px;font-size:1.15rem;font-family:var(--font-display);">Nama Karyawan</h3>
+            <p id="empPhotoDept" style="margin:0 0 14px;font-size:0.82rem;color:var(--muted-foreground);letter-spacing:0.04em;text-transform:uppercase;font-weight:700;">Departemen</p>
+            
+            <div id="empPhotoContainer" style="width:100%;height:320px;overflow:hidden;position:relative;border-radius:12px;background:#09090b;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none;user-select:none;">
+                <img id="empPhotoImg" src="" alt="" style="max-width:100%;max-height:100%;object-fit:contain;transition:transform 0.1s ease-out;transform-origin:center center;pointer-events:none;">
+            </div>
+
+            <!-- CONTROLS ZOOM PERBESAR PERKECIL -->
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;">
+                <button type="button" id="btnZoomOut" style="width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--foreground);font-weight:bold;font-size:1.1rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">-</button>
+                <span id="zoomPercent" style="font-family:var(--font-mono);font-size:0.85rem;font-weight:bold;min-width:48px;text-align:center;">100%</span>
+                <button type="button" id="btnZoomIn" style="width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--foreground);font-weight:bold;font-size:1.1rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">+</button>
+                <button type="button" id="btnZoomReset" style="padding:0 12px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--muted-foreground);font-size:0.78rem;font-weight:bold;cursor:pointer;">Reset</button>
+            </div>
+        </div>
+    </div>
+
     <!-- PROFIL MODAL (khusus yang sudah login) -->
     <?php if ($loggedIn): ?>
     <div id="pubProfileModal" class="modal-backdrop<?= $openProfile ? ' show' : '' ?>">
@@ -282,8 +322,19 @@ unset($_SESSION['open_profile']);
                     <span><?= e($userInitial) ?></span>
                 <?php endif; ?>
             </div>
+            <?php 
+                $userEmpCode = $locUser['emp_code'] ?? '';
+                $userLoveCount = ($userEmpCode !== '') ? ($voteCounts[$userEmpCode] ?? 0) : 0;
+            ?>
             <h2 style="margin:0"><?= e($userName) ?></h2>
             <p class="pub-profile-meta"><?= e($username) ?> · <?= e($userRole) ?></p>
+            <?php if ($userEmpCode !== ''): ?>
+            <div style="margin:8px 0 16px;">
+                <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:20px;background:color-mix(in oklch, #ef4444 12%, transparent);color:#dc2626;font-weight:700;font-size:0.9rem;border:1px solid color-mix(in oklch, #ef4444 30%, transparent);">
+                    ❤️ <?= (int)$userLoveCount ?>
+                </span>
+            </div>
+            <?php endif; ?>
             <div class="pub-profile-actions">
                 <a href="<?= $userRole === 'employee' ? 'employee.php' : 'index.php' ?>" class="pub-profile-btn">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -485,6 +536,102 @@ unset($_SESSION['open_profile']);
                     window.location.reload();
                 })
                 .catch(function() { AppToast.error('Gagal logout.'); });
+        }
+
+        
+        // MODAL PHOTO PREVIEW & ZOOMING
+        var empPhotoModal = document.getElementById("empPhotoModal");
+        var empPhotoImg = document.getElementById("empPhotoImg");
+        var empPhotoName = document.getElementById("empPhotoName");
+        var empPhotoDept = document.getElementById("empPhotoDept");
+        var empPhotoContainer = document.getElementById("empPhotoContainer");
+        var zoomPercent = document.getElementById("zoomPercent");
+        var currentZoom = 1.0;
+        var panX = 0, panY = 0;
+        var isDragging = false, startX = 0, startY = 0;
+
+        function updateZoomTransform() {
+            if (empPhotoImg) {
+                empPhotoImg.style.transform = "translate(" + panX + "px, " + panY + "px) scale(" + currentZoom + ")";
+            }
+            if (zoomPercent) {
+                zoomPercent.textContent = Math.round(currentZoom * 100) + "%";
+            }
+        }
+
+        function resetZoom() {
+            currentZoom = 1.0;
+            panX = 0; panY = 0;
+            updateZoomTransform();
+        }
+
+        function setZoom(newZoom) {
+            currentZoom = Math.min(Math.max(0.5, newZoom), 5.0);
+            if (currentZoom <= 1.0) { panX = 0; panY = 0; }
+            updateZoomTransform();
+        }
+
+        document.querySelectorAll(".emp-thumb").forEach(function(thumb) {
+            thumb.style.cursor = "pointer";
+            thumb.addEventListener("click", function(e) {
+                e.stopPropagation();
+                var img = thumb.querySelector("img");
+                var row = thumb.closest("tr");
+                var name = row ? row.querySelector(".pub-name").innerText.trim() : "Karyawan";
+                var deptTitle = row ? row.closest("table").previousElementSibling : null;
+                var deptName = deptTitle ? deptTitle.innerText.trim() : "";
+
+                if (img && img.src) {
+                    empPhotoName.textContent = name;
+                    empPhotoDept.textContent = deptName;
+                    empPhotoImg.src = img.src;
+                    resetZoom();
+                    empPhotoModal.classList.add("show");
+                }
+            });
+        });
+
+        if (document.getElementById("empPhotoCloseBtn")) {
+            document.getElementById("empPhotoCloseBtn").addEventListener("click", function() {
+                empPhotoModal.classList.remove("show");
+            });
+        }
+        if (empPhotoModal) {
+            empPhotoModal.addEventListener("click", function(e) {
+                if (e.target === empPhotoModal) empPhotoModal.classList.remove("show");
+            });
+        }
+
+        if (document.getElementById("btnZoomIn")) document.getElementById("btnZoomIn").addEventListener("click", function() { setZoom(currentZoom + 0.3); });
+        if (document.getElementById("btnZoomOut")) document.getElementById("btnZoomOut").addEventListener("click", function() { setZoom(currentZoom - 0.3); });
+        if (document.getElementById("btnZoomReset")) document.getElementById("btnZoomReset").addEventListener("click", resetZoom);
+
+        if (empPhotoContainer) {
+            empPhotoContainer.addEventListener("wheel", function(e) {
+                e.preventDefault();
+                var delta = e.deltaY < 0 ? 0.2 : -0.2;
+                setZoom(currentZoom + delta);
+            }, { passive: false });
+
+            empPhotoContainer.addEventListener("mousedown", function(e) {
+                if (currentZoom > 1.0) {
+                    isDragging = true;
+                    startX = e.clientX - panX;
+                    startY = e.clientY - panY;
+                    empPhotoContainer.style.cursor = "grabbing";
+                }
+            });
+            window.addEventListener("mousemove", function(e) {
+                if (isDragging) {
+                    panX = e.clientX - startX;
+                    panY = e.clientY - startY;
+                    updateZoomTransform();
+                }
+            });
+            window.addEventListener("mouseup", function() {
+                isDragging = false;
+                if (empPhotoContainer) empPhotoContainer.style.cursor = "grab";
+            });
         }
 
         // PROFIL MODAL

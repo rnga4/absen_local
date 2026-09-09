@@ -10,13 +10,19 @@ $st = db()->prepare("SELECT DISTINCT emp_code FROM iclock_transaction_backup WHE
 $st->execute([':d' => $today]);
 $present = array_column($st->fetchAll(), 'emp_code', 'emp_code');
 
+$voteCounts = votes_today_counts();
+$myVotes    = my_votes_today($_SESSION['username'] ?? null);
+
 $notAbsen = [];
 foreach ($employees as $emp) {
     if (!isset($present[$emp['emp_code']])) {
         $dept = $emp['dept_name'] ?? '-';
+        $code = $emp['emp_code'];
         $notAbsen[$dept][] = [
-            'emp_code' => $emp['emp_code'],
-            'name'     => $emp['first_name'],
+            'emp_code'   => $code,
+            'name'       => $emp['first_name'],
+            'love_count' => (int) ($voteCounts[$code] ?? 0),
+            'my_vote'    => !empty($myVotes[$code]),
         ];
     }
 }

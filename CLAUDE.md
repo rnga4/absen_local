@@ -37,6 +37,23 @@ Aplikasi web monitoring absensi ("Absensi Monitor"). PHP murni (tanpa framework/
 - `public.php` & `api_vote.php`: Fitur apresiasi karyawan belum absen menggunakan single love vote toggle (`action=vote`, tanpa type parameter).
 - Setiap user (per hari) dapat memberikan atau menarik (toggle) 1 emoji ❤️ pada setiap karyawan yang belum absen.
 - Response API: `{ success, state ('added'|'removed'), my_vote (bool), love_count (int) }`.
+- Catatan: `api_vote.php` juga menangani `action=login` & `action=logout` (switch-case, lihat bagian API di bawah).
+
+## API Endpoints (JSON — dipakai aplikasi Android)
+
+Endpoint JSON (`Content-Type: application/json`). Sebagian besar dikonsumsi klien eksternal (Android); sebagian juga dipakai PHP web:
+
+- **`api_login.php`** — login JSON. Terima form-encoded atau body JSON (`username`/`password`). Urutan cek: tabel SQLite `users` → fallback env `APP_USER`/`APP_PASS` (admin) → **jalur karyawan** via `personnel_employee.self_password` (PBKDF2, read-only, tidak mengubah DB). Set session & kembalikan `{ success, role, username, name, emp_code?, dept? }`. (Catatan: `login.php` web TIDAK punya jalur `self_password` ini — hanya `api_login.php`.)
+- **`api_dashboard.php`** — data dashboard harian. `require_login()`. Role `employee` → hanya data dirinya (in/out/status/late via `emp_code` session). Role `admin` → semua karyawan per departemen, dukungan filter `?f=hadir|telat|belum` & tanggal `?date=YYYY-MM-DD`. Response `{ success, role, stat, departments }`.
+- **`api_public.php`** — data halaman publik (tanpa login): karyawan yang **belum** absen hari ini + `love_count` & `my_vote` (bila sudah login). Response `{ date, time, all_present, total_not_absen, departments }`.
+- **`api_vote.php`** — (POST) switch-case `login` / `logout` / `vote`. Vote memvalidasi `emp_code` ada di `active_employees()` lalu `toggle_love()`.
+- **`api_history.php`** — riwayat absen per karyawan, paging 30 hari (`?offset=`), filter `?start_date=`/`?end_date=`. Role guard: employee hanya riwayat dirinya (`emp_code` session). Response `{ success, employee, history, has_more, next_offset, total_days }`. Dipakai `index.php`, `employee.php`, `weekly.php` untuk modal detail (infinite scroll).
+
+## Fitur Lain
+
+- **`employee.php`** — dashboard karyawan personal (role `employee`): data absen "hari ini" (in/out/status/telat), avatar & foto profil, riwayat collapsible (lazy-load) via `api_history.php`. Guard: non-employee → redirect `index.php`; tanpa `emp_code` → `logout.php`. Layout `.container { max-width: 720px; }`.
+- **`export.php`** — export CSV harian (butuh login), BOM UTF-8 agar Excel aman, tanggal opsional `?d=YYYY-MM-DD`. Kolom: No, Nama, Departemen, Masuk, Keluar, Status, Telat (m). Dipanggil dari tombol "Export CSV" di `index.php`.
+- **`notify.php`** — script CLI untuk notifikasi Telegram (dipanggil cron). Kirim daftar karyawan belum absen; skip & exit bila semua sudah absen. Pakai env `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, timeout 3s. Cron di progress.md: `08:05` & `12:00` Senin–Jumat.
 
 ## Profil & Foto
 

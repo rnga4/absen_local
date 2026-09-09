@@ -194,8 +194,7 @@ function votes_today_counts(): array
     if ($db === null) {
         return [];
     }
-    $st = $db->prepare("SELECT emp_code, COUNT(*) AS n FROM votes WHERE vote_date = :d GROUP BY emp_code");
-    $st->execute([':d' => date('Y-m-d')]);
+    $st = $db->query("SELECT emp_code, COUNT(*) AS n FROM votes GROUP BY emp_code");
     $out = [];
     foreach ($st->fetchAll() as $r) {
         $out[$r['emp_code']] = (int) $r['n'];
