@@ -364,6 +364,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
         .divider-box { height: 1px; background: var(--border); margin: 4px 0 20px; }
+
+        .camera-badge-wrap { position: relative; display: inline-block; cursor: pointer; }
+        .camera-badge {
+            position: absolute; bottom: 2px; right: 2px;
+            width: 30px; height: 30px; border-radius: 50%;
+            background: var(--primary); color: var(--primary-foreground);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem; border: 2px solid var(--background);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+            transition: transform 0.15s;
+        }
+        .camera-badge-wrap:hover .camera-badge { transform: scale(1.1); }
+
+        .about-section {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+            padding: 22px; margin-bottom: 22px;
+        }
+        .about-section h2 { margin: 0 0 12px; font-size: 1.05rem; color: var(--foreground); }
+        .about-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+        .about-row:last-child { border-bottom: none; }
+        .about-label { color: var(--muted-foreground); }
+        .about-value { color: var(--foreground); font-weight: 600; }
+        .about-libraries { margin-top: 12px; }
+        .about-libraries h3 { font-size: 0.82rem; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 8px; }
+        .about-lib-item { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.85rem; }
+        .about-lib-name { color: var(--foreground); }
+        .about-lib-license { color: var(--muted-foreground); font-size: 0.8rem; }
     </style>
 </head>
 <body>
@@ -454,10 +482,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h2>Foto Profil</h2>
             <form method="post" enctype="multipart/form-data" onsubmit="return confirmUpload()">
                 <input type="hidden" name="action" value="photo">
-                <div class="form-group">
-                    <label for="photo">Pilih foto (JPG / PNG / WEBP, maks 2 MB)</label>
-                    <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp" required>
+                <div style="display:flex;align-items:center;gap:20px;margin-bottom:16px">
+                    <label class="camera-badge-wrap" for="photo" title="Klik untuk ganti foto">
+                        <div class="profile-avatar" id="avatarBox" style="width:80px;height:80px;font-size:2rem;margin:0">
+                            <?php if ($hasPhoto): ?>
+                                <img src="<?= e($photoUrl) ?>" alt="<?= e($name) ?>">
+                            <?php else: ?>
+                                <?= strtoupper(mb_substr($name, 0, 1)) ?>
+                            <?php endif; ?>
+                        </div>
+                        <span class="camera-badge">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                        </span>
+                    </label>
+                    <div style="font-size:0.82rem;color:var(--muted-foreground);line-height:1.5">
+                        Ketuk avatar untuk memilih foto baru.<br>
+                        Format: JPG / PNG / WEBP, maks 2 MB.
+                    </div>
                 </div>
+                <input type="file" id="photo" name="photo" accept="image/jpeg,image/png,image/webp" required style="display:none">
                 <button type="submit" class="btn-primary" id="photoBtn">Simpan Foto</button>
                 <?php if ($hasPhoto): ?>
                     <span style="margin-left:10px;font-size:0.8rem;color:var(--muted-foreground)">Foto aktif sudah tersimpan.</span>
@@ -486,6 +529,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <button type="submit" class="btn-primary">Ganti Password</button>
             </form>
+        </div>
+
+        <div class="divider-box"></div>
+
+        <div class="about-section">
+            <h2>Tentang & Lisensi</h2>
+            <div class="about-row">
+                <span class="about-label">Nama Aplikasi</span>
+                <span class="about-value">Absensi Monitor</span>
+            </div>
+            <div class="about-row">
+                <span class="about-label">Versi</span>
+                <span class="about-value">1.0.0</span>
+            </div>
+            <div class="about-row">
+                <span class="about-label">Hak Cipta</span>
+                <span class="about-value">&copy; 2026 rnga4</span>
+            </div>
+            <div class="about-row">
+                <span class="about-label">Lisensi</span>
+                <span class="about-value">MIT License</span>
+            </div>
+            <div class="about-libraries">
+                <h3>Pustaka Pihak Ketiga</h3>
+                <div class="about-lib-item">
+                    <span class="about-lib-name">PHP</span>
+                    <span class="about-lib-license">MIT License</span>
+                </div>
+                <div class="about-lib-item">
+                    <span class="about-lib-name">Nginx</span>
+                    <span class="about-lib-license">BSD-2-Clause</span>
+                </div>
+                <div class="about-lib-item">
+                    <span class="about-lib-name">SQLite</span>
+                    <span class="about-lib-license">Public Domain</span>
+                </div>
+                <div class="about-lib-item">
+                    <span class="about-lib-name">MySQL</span>
+                    <span class="about-lib-license">GPL v2</span>
+                </div>
+            </div>
         </div>
     </main>
 

@@ -52,6 +52,10 @@ Endpoint JSON (`Content-Type: application/json`). Sebagian besar dikonsumsi klie
 ## Fitur Lain
 
 - **`employee.php`** — dashboard karyawan personal (role `employee`): data absen "hari ini" (in/out/status/telat), avatar & foto profil, riwayat collapsible (lazy-load) via `api_history.php`. Guard: non-employee → redirect `index.php`; tanpa `emp_code` → `logout.php`. Layout `.container { max-width: 720px; }`.
+  - **Auto-refresh 60 detik**: polling `api_dashboard.php` tiap 60s untuk update Masuk/Keluar/Status badge tanpa full reload (elemen ber-id `todayIn`, `todayOut`, `todayStatus`, indikator `syncIndicator`).
+  - **Avatar + camera badge overlay**: avatar di pojok kanan bawah punya badge kamera (`avatar-cam-badge`) yang merujuk ke `profile.php` (setara tap avatar → `ProfileSettingsActivity` di Android).
+- **`public.php`** — halaman publik: daftar karyawan belum absen per departemen + vote ❤️ + **search filter real-time** (`#pubSearch`, debounce 120ms). Filter menyembunyikan baris tanpa match, menyembunyikan section departemen kosong, dan menampilkan jumlah hasil / pesan "Tidak ada karyawan yang cocok" (`#pubSearchCount`, `#noResultsMsg`).
+- **`profile.php`** — selain upload foto & ganti password, punya: **avatar + camera badge override** (`camera-badge-wrap`, klik avatar = file picker) dan **section "Tentang & Lisensi"** (`about-section`) berisi nama app, versi 1.0.0, hak cipta © 2026 rnga4, lisensi MIT, dan daftar pustaka pihak ketiga (PHP, Nginx, SQLite, MySQL).
 - **`export.php`** — export CSV harian (butuh login), BOM UTF-8 agar Excel aman, tanggal opsional `?d=YYYY-MM-DD`. Kolom: No, Nama, Departemen, Masuk, Keluar, Status, Telat (m). Dipanggil dari tombol "Export CSV" di `index.php`.
 - **`notify.php`** — script CLI untuk notifikasi Telegram (dipanggil cron). Kirim daftar karyawan belum absen; skip & exit bila semua sudah absen. Pakai env `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID`, timeout 3s. Cron di progress.md: `08:05` & `12:00` Senin–Jumat.
 

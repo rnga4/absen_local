@@ -126,6 +126,36 @@ unset($_SESSION['open_profile']);
         }
         .pub-profile-logout:hover { background: color-mix(in oklch, var(--destructive) 10%, transparent); }
         #voteLoginError { margin-top: 10px; font-size: 0.85rem; color: var(--destructive); min-height: 0; }
+        .pub-search-wrap {
+            margin: 14px 0 6px; position: relative;
+        }
+        .pub-search {
+            width: 100%; padding: 11px 14px 11px 40px;
+            border: 1.5px solid var(--border); border-radius: var(--radius-md);
+            background: var(--card); color: var(--foreground);
+            font-family: var(--font-sans); font-size: 0.92rem; outline: none;
+            box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .pub-search:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px color-mix(in oklch, var(--primary) 20%, transparent);
+        }
+        .pub-search::placeholder { color: var(--muted-foreground); }
+        .pub-search-icon {
+            position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+            color: var(--muted-foreground); pointer-events: none;
+        }
+        .pub-search-count {
+            font-size: 0.78rem; color: var(--muted-foreground); margin-top: 6px;
+            display: none;
+        }
+        .pub-search-count.active { display: block; }
+        .dept-section.hidden { display: none; }
+        .no-results-msg {
+            text-align: center; padding: 40px 0; color: var(--muted-foreground);
+            font-size: 0.95rem; display: none;
+        }
+        .no-results-msg.active { display: block; }
         @media (max-width: 600px) {
             #clock { display: none; }
             .pub-emp-btn .pub-emp-label { display: none; }
@@ -230,7 +260,14 @@ unset($_SESSION['open_profile']);
         </div>
         <?php else: ?>
         <p class="range-info"><strong><?= $total ?> orang</strong> belum absen · Per <?= date('H:i') ?></p>
+        <div class="pub-search-wrap">
+            <svg class="pub-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+            <input type="search" class="pub-search" id="pubSearch" placeholder="Cari nama karyawan..." autocomplete="off">
+        </div>
+        <div class="pub-search-count" id="pubSearchCount"></div>
+        <div class="no-results-msg" id="noResultsMsg">Tidak ada karyawan yang cocok.</div>
         <?php foreach ($notAbsen as $dept => $names): ?>
+        <div class="dept-section" data-dept="<?= e($dept) ?>">
         <h2 class="dept-title"><?= e($dept) ?></h2>
         <table class="tbl">
             <thead>
@@ -265,6 +302,7 @@ unset($_SESSION['open_profile']);
                 <?php endforeach ?>
             </tbody>
         </table>
+        </div>
         <?php endforeach ?>
         <?php endif ?>
     </main>
@@ -462,6 +500,45 @@ unset($_SESSION['open_profile']);
             if (overlay) overlay.addEventListener('click', closeDrawer);
             if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
         })();
+    })();
+
+    // ---- SEARCH FILTER ----
+    (function () {
+        var search = document.getElementById('pubSearch');
+        var countEl = document.getElementById('pubSearchCount');
+        var noResults = document.getElementById('noResultsMsg');
+        if (!search) return;
+        var sections = document.querySelectorAll('.dept-section');
+        var timer = null;
+
+        function doFilter() {
+            var q = search.value.trim().toLowerCase();
+            var totalVisible = 0;
+            sections.forEach(function (sec) {
+                var rows = sec.querySelectorAll('tbody tr');
+                var visible = 0;
+                rows.forEach(function (row) {
+                    var name = (row.querySelector('.pub-name') || {}).textContent || '';
+                    var match = !q || name.toLowerCase().indexOf(q) !== -1;
+                    row.style.display = match ? '' : 'none';
+                    if (match) visible++;
+                });
+                sec.classList.toggle('hidden', visible === 0);
+                totalVisible += visible;
+            });
+            if (q) {
+                countEl.textContent = totalVisible + ' hasil ditemukan';
+                countEl.classList.add('active');
+            } else {
+                countEl.classList.remove('active');
+            }
+            noResults.classList.toggle('active', q && totalVisible === 0);
+        }
+
+        search.addEventListener('input', function () {
+            clearTimeout(timer);
+            timer = setTimeout(doFilter, 120);
+        });
     })();
 
     // ---- LIKE/DISLIKE VOTE ----

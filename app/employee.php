@@ -81,6 +81,17 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
             border: 1px solid color-mix(in oklch, #fff 30%, var(--primary));
         }
         .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .avatar-cam-wrap { position: relative; display: inline-block; cursor: pointer; }
+        .avatar-cam-wrap:hover .avatar-cam-badge { transform: scale(1.1); }
+        .avatar-cam-badge {
+            position: absolute; bottom: 2px; right: 2px;
+            width: 28px; height: 28px; border-radius: 50%;
+            background: var(--primary); color: var(--primary-foreground);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.8rem; border: 2px solid var(--background);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+            transition: transform 0.15s;
+        }
         .profile-name { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; margin: 0; color: var(--foreground); }
         .profile-meta { color: var(--muted-foreground); font-size: 0.9rem; margin-top: 6px; }
 
@@ -267,7 +278,12 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
         <?php breadcrumb([['label' => 'Dashboard Publik', 'href' => 'public.php'], ['label' => 'Absensi Saya']]); ?>
         <?php $empLoveCount = votes_today_counts()[$empCode] ?? 0; ?>
         <div class="profile-header">
-            <div class="profile-avatar"><?php if ($hasPhoto): ?><img src="<?= e($photoUrl) ?>" alt="<?= e($empName) ?>"><?php else: ?><?= strtoupper(mb_substr($empName, 0, 1)) ?><?php endif; ?></div>
+            <a href="profile.php" class="avatar-cam-wrap" title="Buka Pengaturan Profil">
+                <div class="profile-avatar"><?php if ($hasPhoto): ?><img src="<?= e($photoUrl) ?>" alt="<?= e($empName) ?>"><?php else: ?><?= strtoupper(mb_substr($empName, 0, 1)) ?><?php endif; ?></div>
+                <span class="avatar-cam-badge">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                </span>
+            </a>
             <h1 class="profile-name"><?= e($empName) ?></h1>
             <div class="profile-meta"><?= e($empDept) ?> · ID: <?= e($empId) ?></div>
             <div style="margin-top:10px;">
@@ -282,15 +298,15 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
             <div class="today-grid">
                 <div class="today-item">
                     <div class="label">Masuk</div>
-                    <div class="value"><?= $in ?? '-' ?></div>
+                    <div class="value" id="todayIn"><?= $in ?? '-' ?></div>
                 </div>
                 <div class="today-item">
                     <div class="label">Keluar</div>
-                    <div class="value"><?= $out ?? '-' ?></div>
+                    <div class="value" id="todayOut"><?= $out ?? '-' ?></div>
                 </div>
                 <div class="today-item">
                     <div class="label">Status</div>
-                    <div class="value">
+                    <div class="value" id="todayStatus">
                         <?php if ($status === 'hadir'): ?>
                             <span class="badge st-hadir">Hadir</span>
                         <?php elseif ($status === 'telat'): ?>
@@ -301,6 +317,7 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
                     </div>
                 </div>
             </div>
+            <div style="text-align:right;margin-top:8px;font-size:0.72rem;color:var(--muted-foreground)" id="syncIndicator"></div>
         </div>
 
         <div class="history-section" id="historySection">
@@ -518,6 +535,46 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
                 }
             }, { passive: true });
         }
+    })();
+
+    // ---- AUTO-REFRESH STATUS (60 detik) ----
+    (function () {
+        var inEl = document.getElementById('todayIn');
+        var outEl = document.getElementById('todayOut');
+        var statusEl = document.getElementById('todayStatus');
+        var syncEl = document.getElementById('syncIndicator');
+        if (!inEl || !outEl || !statusEl) return;
+
+        function fmtTime() {
+            var d = new Date();
+            return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+        }
+
+        function refresh() {
+            fetch('api_dashboard.php')
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    if (!d.success || d.role !== 'employee') return;
+                    var t = d.today;
+                    if (!t) return;
+                    inEl.textContent = t.in || '-';
+                    outEl.textContent = t.out || '-';
+                    var badge = '';
+                    if (t.status === 'hadir') {
+                        badge = '<span class="badge st-hadir">Hadir</span>';
+                    } else if (t.status === 'telat') {
+                        badge = '<span class="badge st-telat">+' + t.late + ' m</span>';
+                    } else {
+                        badge = '<span class="badge st-belum">Belum</span>';
+                    }
+                    statusEl.innerHTML = badge;
+                    if (syncEl) syncEl.textContent = 'Terakhir sync: ' + fmtTime();
+                })
+                .catch(function () {});
+        }
+
+        setInterval(refresh, 60000);
+        if (syncEl) syncEl.textContent = 'Terakhir sync: ' + fmtTime();
     })();
     </script>
     <script src="assets/toast.js"></script>
