@@ -272,6 +272,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#3859A8">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <title>Profil - <?= e($name) ?></title>
     <link rel="stylesheet" href="assets/pl-komatsu-ui-template.css">
     <link rel="stylesheet" href="assets/style.css">
@@ -298,7 +300,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         inset 0 1.5px 1.5px 0 color-mix(in oklch, #fff 40%, transparent);
             border: 1px solid color-mix(in oklch, #fff 30%, var(--primary));
         }
-        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-avatar img { width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: cover; }
         .profile-name { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; margin: 0; color: var(--foreground); }
         .profile-meta { color: var(--muted-foreground); font-size: 0.9rem; margin-top: 6px; }
 

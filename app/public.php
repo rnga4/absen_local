@@ -51,6 +51,8 @@ unset($_SESSION['open_profile']);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#3859A8">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <title>Belum Absen — <?= date('d F Y') ?></title>
     <link rel="stylesheet" href="assets/pl-komatsu-ui-template.css">
     <link rel="stylesheet" href="assets/style.css">
@@ -89,7 +91,7 @@ unset($_SESSION['open_profile']);
             transition: border-color 0.2s, transform 0.2s;
         }
         .pub-avatar-btn:hover { border-color: var(--primary); transform: translateY(-1px); }
-        .pub-avatar-btn img { width: 100%; height: 100%; object-fit: cover; }
+        .pub-avatar-btn img { width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: cover; }
         .pub-avatar-btn .pub-avatar-fallback {
             width: 100%; height: 100%;
             display: flex; align-items: center; justify-content: center;
@@ -106,7 +108,7 @@ unset($_SESSION['open_profile']);
             background: linear-gradient(135deg, var(--primary), color-mix(in oklch, var(--primary) 70%, #fff));
             border: 2px solid color-mix(in oklch, var(--primary) 35%, transparent);
         }
-        .pub-profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .pub-profile-avatar img { width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: cover; }
         .pub-profile-meta { font-size: 0.85rem; color: var(--muted-foreground); margin: 2px 0 18px; }
         .pub-profile-actions { display: flex; flex-direction: column; gap: 8px; }
         .pub-profile-actions a { text-decoration: none; }

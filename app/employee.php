@@ -55,6 +55,8 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#3859A8">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <title>Absensi Saya - <?= e($empName) ?></title>
     <link rel="stylesheet" href="assets/pl-komatsu-ui-template.css">
     <link rel="stylesheet" href="assets/style.css">
@@ -80,7 +82,7 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
                         inset 0 1.5px 1.5px 0 color-mix(in oklch, #fff 40%, transparent);
             border: 1px solid color-mix(in oklch, #fff 30%, var(--primary));
         }
-        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-avatar img { width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: cover; }
         .avatar-cam-wrap { position: relative; display: inline-block; cursor: pointer; }
         .avatar-cam-wrap:hover .avatar-cam-badge { transform: scale(1.1); }
         .avatar-cam-badge {
@@ -172,6 +174,12 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
             margin-top: 14px;
         }
         .emp-loading-skeleton { padding: 32px 16px; text-align: center; color: var(--muted-foreground); font-size: 0.9rem; }
+        #historyBody {
+            max-height: 60vh;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
 
         /* Input filter (mirip search di index) */
         .history-filter {

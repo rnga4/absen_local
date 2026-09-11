@@ -163,6 +163,8 @@ function compute_row($empCode, &$punches)
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#3859A8">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <title>Absensi Mingguan - Absensi Monitor</title>
     <link rel="stylesheet" href="assets/pl-komatsu-ui-template.css">
     <link rel="stylesheet" href="assets/style.css">

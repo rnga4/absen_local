@@ -65,6 +65,8 @@ foreach ($employees as $emp) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#3859A8">
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
     <title>Dashboard - Absensi Monitor</title>
     <link rel="stylesheet" href="assets/pl-komatsu-ui-template.css">
     <link rel="stylesheet" href="assets/style.css">
@@ -585,7 +587,7 @@ foreach ($employees as $emp) {
                 if (endDateInput) endDateInput.value = '';
 
                 if (photo) {
-                    avatar.innerHTML = '<img src="' + photo + '" alt="' + (name || '') + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+                    avatar.innerHTML = '<img src="' + photo + '" alt="' + (name || '') + '" style="width:100%;height:100%;max-width:100%;max-height:100%;object-fit:cover;border-radius:50%">';
                 } else {
                     var initials = name ? name.trim().charAt(0).toUpperCase() : 'E';
                     avatar.textContent = initials;
