@@ -252,6 +252,7 @@ foreach ($employees as $emp) {
                 <label data-theme="theme-mingyu"><span>Mingyu</span></label>
                 <label data-theme="theme-ocean"><span>Ocean</span></label>
                 <label data-theme="theme-retrolight"><span>Retrolight</span></label>
+                <label data-theme="theme-younglavender"><span>Young Lavender</span></label>
             </ul>
         </div>
     </div>
@@ -352,6 +353,7 @@ foreach ($employees as $emp) {
                         <div class="emp-info-sub">
                             <span id="modalEmpDept">Departemen</span> · ID: <span id="modalEmpCode">1001</span>
                         </div>
+                        <div id="modalEmpLbPos" style="font-size:0.75rem;color:var(--muted-foreground);margin-top:2px"></div>
                     </div>
                 </div>
                 <button type="button" class="emp-modal-close-btn" id="modalCloseBtn" aria-label="Tutup">&times;</button>
@@ -386,7 +388,7 @@ foreach ($employees as $emp) {
                 if (String(lbl.dataset.theme) === saved) lbl.style.outline = '2px solid var(--primary)';
             });
             function applyTheme(t) {
-                document.body.classList.remove('dark','theme-sakura','theme-bamboo','theme-cyberpunk','theme-mingyu','theme-ocean','theme-retrolight');
+                document.body.classList.remove('dark','theme-sakura','theme-bamboo','theme-cyberpunk','theme-mingyu','theme-ocean','theme-retrolight','theme-younglavender');
                 if (t) document.body.classList.add(t);
             }
             list.addEventListener('click', function (e) {
@@ -565,6 +567,7 @@ foreach ($employees as $emp) {
             var nameEl = document.getElementById('modalEmpName');
             var deptEl = document.getElementById('modalEmpDept');
             var codeEl = document.getElementById('modalEmpCode');
+            var lbPosEl = document.getElementById('modalEmpLbPos');
             var bodyEl = document.getElementById('modalBody');
             var filterForm = document.getElementById('modalDateFilterForm');
             var startDateInput = document.getElementById('modalStartDate');
@@ -575,6 +578,29 @@ foreach ($employees as $emp) {
             var currentOffset = 0;
             var isLoading = false;
             var hasMore = false;
+
+            function loadLbPos(code){
+                if (!lbPosEl) return;
+                lbPosEl.textContent = '';
+                if (!code) return;
+                var yearNow = new Date().getFullYear();
+                fetch('api_leaderboard.php?year=' + yearNow + '&limit=200')
+                    .then(function(r){ return r.json(); })
+                    .then(function(d){
+                        if (!d.success) return;
+                        var found = null;
+                        if (d.leaderboard) {
+                            for (var i=0; i<d.leaderboard.length; i++) {
+                                if (String(d.leaderboard[i].emp_code) === String(code)) { found = d.leaderboard[i]; break; }
+                            }
+                        }
+                        if (!found && d.me && String(d.me.emp_code) === String(code)) found = d.me;
+                        if (found) {
+                            lbPosEl.textContent = 'Peringkat #' + found.rank + ' \u2022 ' + found.present_days + '/' + found.workdays + ' hari (' + found.rate + '%)';
+                        }
+                    })
+                    .catch(function(){});
+            }
 
             function openModal(code, name, dept, photo) {
                 if (!overlay) return;
@@ -595,6 +621,7 @@ foreach ($employees as $emp) {
                 nameEl.textContent = name || 'Karyawan';
                 deptEl.textContent = dept || '-';
                 codeEl.textContent = code || '-';
+                loadLbPos(code);
                 bodyEl.innerHTML = '<div class="emp-loading-skeleton">🔄 Memuat riwayat absensi...</div>';
                 
                 overlay.classList.add('active');

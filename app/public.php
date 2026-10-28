@@ -3,6 +3,7 @@ require __DIR__ . '/config.php';
 
 $today = date('Y-m-d');
 $employees = active_employees();
+$meEmpCode = $_SESSION['emp_code'] ?? '';
 
 $st = db()->prepare("SELECT DISTINCT emp_code FROM iclock_transaction_backup WHERE punch_time >= :d AND punch_time < DATE_ADD(:d, INTERVAL 1 DAY)");
 $st->execute([':d' => $today]);
@@ -242,6 +243,7 @@ unset($_SESSION['open_profile']);
                 <label data-theme="theme-mingyu"><span>Mingyu</span></label>
                 <label data-theme="theme-ocean"><span>Ocean</span></label>
                 <label data-theme="theme-retrolight"><span>Retrolight</span></label>
+                <label data-theme="theme-younglavender"><span>Young Lavender</span></label>
             </ul>
         </div>
     </div>
@@ -268,6 +270,8 @@ unset($_SESSION['open_profile']);
         </div>
         <div class="pub-search-count" id="pubSearchCount"></div>
         <div class="no-results-msg" id="noResultsMsg">Tidak ada karyawan yang cocok.</div>
+
+        <!-- Leaderboard - Top Konsisten (yearly) -->
         <?php foreach ($notAbsen as $dept => $names): ?>
         <div class="dept-section" data-dept="<?= e($dept) ?>">
         <h2 class="dept-title"><?= e($dept) ?></h2>
@@ -454,7 +458,7 @@ unset($_SESSION['open_profile']);
         var themeCheck = document.getElementById('theme-popup-checkbox');
         var savedTheme = localStorage.getItem('absensi-theme') || '';
         function applyTheme(t) {
-            document.body.classList.remove('dark','theme-sakura','theme-bamboo','theme-cyberpunk','theme-mingyu','theme-ocean','theme-retrolight');
+            document.body.classList.remove('dark','theme-sakura','theme-bamboo','theme-cyberpunk','theme-mingyu','theme-ocean','theme-retrolight','theme-younglavender');
             if (t) document.body.classList.add(t);
         }
         applyTheme(savedTheme);
@@ -791,6 +795,79 @@ unset($_SESSION['open_profile']);
             var cancel = document.getElementById('voteLoginCancel');
             if (cancel) cancel.addEventListener('click', closeVoteLogin);
         }
+    })();
+
+    // Leaderboard (placed at bottom)
+    (function(){
+        var sec = document.createElement('section');
+        sec.className = 'lb-section';
+        sec.style.margin = '28px 0 16px';
+        var yearNow = new Date().getFullYear();
+        var meEmpCode = <?= json_encode($meEmpCode) ?>;
+        var years = [];
+        for (var y = yearNow; y >= yearNow - 2; y--) years.push(y);
+        var yearSel = '<select id="lbYearSel" style="border:1px solid var(--border);background:var(--card);color:var(--foreground);border-radius:var(--radius-md);padding:4px 8px;font-size:0.78rem">';
+        for (var i=0; i<years.length; i++) yearSel += '<option value="' + years[i] + '"' + (years[i]===yearNow?' selected':'') + '>' + years[i] + '</option>';
+        yearSel += '</select>';
+        sec.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="display:flex;align-items:center;gap:10px"><h2 style="margin:0;font-size:0.95rem;font-weight:600;letter-spacing:0.01em">Top Konsisten</h2>' + yearSel + '</div><span style="font-size:0.78rem;color:var(--muted-foreground)">Senin\u2013Sabtu</span></div><div class="lb-card" style="border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:var(--card)"><div id="lbLoading" style="padding:10px 14px;color:var(--muted-foreground);font-size:0.86rem">Memuat...</div><div id="lbEmpty" style="display:none;padding:10px 14px;color:var(--muted-foreground);font-size:0.86rem">Belum ada data.</div><div id="lbList" style="display:none"></div></div>';
+        var container = document.querySelector('.container');
+        if (container) {
+            container.appendChild(sec);
+        } else {
+            document.body.appendChild(sec);
+        }
+        var loading = sec.querySelector('#lbLoading');
+        var empty = sec.querySelector('#lbEmpty');
+        var list = sec.querySelector('#lbList');
+        var yearSelEl = sec.querySelector('#lbYearSel');
+        function load(y){
+            if (loading){ loading.style.display='block'; loading.textContent='Memuat...'; }
+            if (empty) empty.style.display='none';
+            if (list){ list.style.display='none'; list.innerHTML=''; }
+            fetch('api_leaderboard.php?year=' + y + '&limit=10')
+                .then(function(r){ return r.json(); })
+            .then(function(d){
+                if (loading) loading.style.display = 'none';
+                if (!d.success || !d.leaderboard || d.leaderboard.length === 0) {
+                    if (empty) empty.style.display = 'block';
+                    return;
+                }
+                var html = '<div style="display:flex;flex-direction:column">';
+                for (var i=0; i<d.leaderboard.length; i++) {
+                    var row = d.leaderboard[i];
+                    var rank = row.rank;
+                    var isMe = meEmpCode && String(row.emp_code) === String(meEmpCode);
+                    var photo = row.photo_url ? '<img src="' + row.photo_url + '" alt="" style="width:100%;height:100%;object-fit:cover">' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--muted);color:var(--muted-foreground);font-size:0.85rem;font-weight:600">' + (row.name ? String(row.name).charAt(0).toUpperCase() : '?') + '</div>';
+                    var rowStyle = isMe ? 'background:color-mix(in oklch, var(--primary) 8%, transparent);' : '';
+                    html += '<div style="display:flex;align-items:center;gap:12px;padding:9px 14px;border-top:1px solid var(--border);' + rowStyle + '">';
+                    html += '<div style="width:20px;text-align:right;color:var(--muted-foreground);font-variant-numeric:tabular-nums">' + rank + '</div>';
+                    html += '<div style="width:34px;height:34px;border-radius:50%;overflow:hidden;flex-shrink:0">' + photo + '</div>';
+                    html += '<div style="flex:1;min-width:0"><div style="font-weight:' + (isMe?'600':'500') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + String(row.name).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + (isMe?' <span style="font-size:0.76rem;color:var(--primary)">(kamu)</span>':'') + '</div><div style="font-size:0.77rem;color:var(--muted-foreground)">' + String(row.dept_name||'-').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div></div>';
+                    html += '<div style="text-align:right;font-variant-numeric:tabular-nums"><span style="font-weight:500">' + row.present_days + '</span><span style="color:var(--muted-foreground)"> / ' + row.workdays + '</span></div>';
+                    html += '</div>';
+                }
+                if (d.me) {
+                    html += '<div style="border-top:1px dashed var(--border);padding:6px 14px;text-align:center;color:var(--muted-foreground);font-size:0.78rem">...</div>';
+                    var m = d.me;
+                    var mphoto = m.photo_url ? '<img src="' + m.photo_url + '" alt="" style="width:100%;height:100%;object-fit:cover">' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--muted);color:var(--muted-foreground);font-size:0.85rem;font-weight:600">' + (m.name ? String(m.name).charAt(0).toUpperCase() : '?') + '</div>';
+                    html += '<div style="display:flex;align-items:center;gap:12px;padding:9px 14px;background:color-mix(in oklch, var(--primary) 8%, transparent);border-top:1px solid var(--border)">';
+                    html += '<div style="width:20px;text-align:right;color:var(--muted-foreground);font-variant-numeric:tabular-nums">' + m.rank + '</div>';
+                    html += '<div style="width:34px;height:34px;border-radius:50%;overflow:hidden;flex-shrink:0">' + mphoto + '</div>';
+                    html += '<div style="flex:1;min-width:0"><div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + String(m.name).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + ' <span style="font-size:0.76rem;color:var(--primary)">(kamu)</span></div><div style="font-size:0.77rem;color:var(--muted-foreground)">' + String(m.dept_name||'-').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div></div>';
+                    html += '<div style="text-align:right;font-variant-numeric:tabular-nums"><span style="font-weight:500">' + m.present_days + '</span><span style="color:var(--muted-foreground)"> / ' + m.workdays + '</span></div>';
+                    html += '</div>';
+                }
+                html += '</div>';
+                list.innerHTML = html;
+                list.style.display = 'block';
+                })
+                .catch(function(){
+                    if (loading) loading.style.display = 'none';
+                    if (empty) { empty.textContent = 'Gagal memuat leaderboard'; empty.style.display = 'block'; }
+                });
+        }
+        if (yearSelEl) yearSelEl.addEventListener('change', function(){ load(this.value); });
+        load(yearNow);
     })();
     </script>
 </body>

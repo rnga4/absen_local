@@ -278,6 +278,7 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
                 <label data-theme="theme-mingyu"><span>Mingyu</span></label>
                 <label data-theme="theme-ocean"><span>Ocean</span></label>
                 <label data-theme="theme-retrolight"><span>Retrolight</span></label>
+                <label data-theme="theme-younglavender"><span>Young Lavender</span></label>
             </ul>
         </div>
     </div>
@@ -325,7 +326,10 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
                     </div>
                 </div>
             </div>
-            <div style="text-align:right;margin-top:8px;font-size:0.72rem;color:var(--muted-foreground)" id="syncIndicator"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+                <div id="empLeaderboardPos" style="font-size:0.75rem;color:var(--muted-foreground)">-</div>
+                <div style="font-size:0.72rem;color:var(--muted-foreground)" id="syncIndicator"></div>
+            </div>
         </div>
 
         <div class="history-section" id="historySection">
@@ -362,7 +366,7 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
             if (String(lbl.dataset.theme) === saved) lbl.style.outline = '2px solid var(--primary)';
         });
         function applyTheme(t) {
-            document.body.classList.remove('dark','theme-sakura','theme-bamboo','theme-cyberpunk','theme-mingyu','theme-ocean','theme-retrolight');
+            document.body.classList.remove('dark','theme-sakura','theme-bamboo','theme-cyberpunk','theme-mingyu','theme-ocean','theme-retrolight','theme-younglavender');
             if (t) document.body.classList.add(t);
         }
         list.addEventListener('click', function (e) {
@@ -583,6 +587,30 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
 
         setInterval(refresh, 60000);
         if (syncEl) syncEl.textContent = 'Terakhir sync: ' + fmtTime();
+    })();
+
+    // Leaderboard position
+    (function(){
+        var posEl = document.getElementById('empLeaderboardPos');
+        if (!posEl) return;
+        var yearNow = new Date().getFullYear();
+        var myEmp = '<?= addslashes($empCode) ?>';
+        fetch('api_leaderboard.php?year=' + yearNow + '&limit=200')
+            .then(function(r){ return r.json(); })
+            .then(function(d){
+                if (!d.success) return;
+                var found = null;
+                if (d.leaderboard) {
+                    for (var i=0; i<d.leaderboard.length; i++) {
+                        if (String(d.leaderboard[i].emp_code) === String(myEmp)) { found = d.leaderboard[i]; break; }
+                    }
+                }
+                if (!found && d.me) found = d.me;
+                if (found) {
+                    posEl.textContent = 'Peringkat #' + found.rank + ' • ' + found.present_days + '/' + found.workdays + ' hari (' + found.rate + '%)';
+                }
+            })
+            .catch(function(){});
     })();
     </script>
     <script src="assets/toast.js"></script>

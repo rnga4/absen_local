@@ -460,6 +460,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label data-theme="theme-mingyu"><span>Mingyu</span></label>
                 <label data-theme="theme-ocean"><span>Ocean</span></label>
                 <label data-theme="theme-retrolight"><span>Retrolight</span></label>
+                <label data-theme="theme-younglavender"><span>Young Lavender</span></label>
             </ul>
         </div>
     </div>
@@ -589,7 +590,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (String(lbl.dataset.theme) === saved) lbl.style.outline = '2px solid var(--primary)';
         });
         function applyTheme(t) {
-            document.body.classList.remove('dark','theme-sakura','theme-bamboo','theme-cyberpunk','theme-mingyu','theme-ocean','theme-retrolight');
+            document.body.classList.remove('dark','theme-sakura','theme-bamboo','theme-cyberpunk','theme-mingyu','theme-ocean','theme-retrolight','theme-younglavender');
             if (t) document.body.classList.add(t);
         }
         list.addEventListener('click', function (e) {

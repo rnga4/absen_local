@@ -9,7 +9,7 @@
    2. Tambahkan class tema di <body>:
         class="dark" | class="theme-sakura" | class="theme-bamboo" |
         class="theme-cyberpunk" | class="theme-mingyu" | class="theme-ocean" |
-        class="theme-retrolight"
+        class="theme-retrolight" | class="theme-younglavender"
    3. Tanpa class = tema Light (default).
 
    Daftar isi:
@@ -180,6 +180,27 @@
   --retro-border-glow: 0 0 6px oklch(0.55 0.18 280 / 12%);
 }
 
+/* --- Tema: Young Lavender (periwinkle pastel muda) ---
+   Warna khas #CCCCFE = oklch(0.862 0.069 285) dipakai sebagai tint
+   lembut (background/gradient/glow), sedangkan --primary memakai
+   lavender lebih pekat agar kontras teks tetap terbaca. */
+.theme-younglavender {
+  --background: oklch(0.97 0.022 285);
+  --foreground: oklch(0.27 0.05 285);
+  --card: oklch(0.99 0.012 285);
+  --card-foreground: oklch(0.27 0.05 285);
+  --primary: oklch(0.62 0.16 285);
+  --primary-foreground: oklch(0.98 0.008 285);
+  --muted: oklch(0.92 0.038 285);
+  --muted-foreground: oklch(0.46 0.06 285);
+  --border: oklch(0.86 0.04 285);
+  --destructive: oklch(0.56 0.22 25);
+  --success: oklch(0.52 0.14 150);
+
+  --younglavender-soft: oklch(0.862 0.069 285);
+  --younglavender-glow: 0 4px 20px oklch(0.62 0.16 285 / 14%);
+}
+
 /* --- Overlay khas per tema (gradient / pola halus di atas halaman).
        Tambahkan ini bila ingin kesan "immersive" seperti di app aslinya. --- */
 .theme-mingyu::before {
@@ -217,6 +238,17 @@
   pointer-events: none;
   z-index: 9998;
 }
+.theme-younglavender::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(160deg,
+    oklch(0.862 0.069 285 / 8%) 0%,
+    transparent 45%,
+    oklch(0.862 0.069 285 / 5%) 100%);
+  pointer-events: none;
+  z-index: 9998;
+}
 
 /* --- Polesan tema: kartu gradient & glow (Mingyu / Ocean) --- */
 .theme-mingyu .card {
@@ -240,6 +272,15 @@
 .theme-retrolight .card {
   border: 1px solid oklch(0.85 0.025 260);
   box-shadow: var(--retro-glow), var(--shadow-sm);
+}
+.theme-younglavender .card {
+  border: 1px solid oklch(0.86 0.045 285);
+  box-shadow: var(--younglavender-glow), var(--shadow-sm);
+  background: linear-gradient(150deg, var(--card) 0%, oklch(0.97 0.028 285) 100%);
+}
+.theme-younglavender .card:hover {
+  border-color: oklch(0.62 0.16 285 / 32%);
+  box-shadow: var(--younglavender-glow), 0 8px 30px oklch(0.62 0.16 285 / 16%), var(--shadow-md);
 }
 
 
