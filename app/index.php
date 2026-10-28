@@ -596,7 +596,8 @@ foreach ($employees as $emp) {
                         }
                         if (!found && d.me && String(d.me.emp_code) === String(code)) found = d.me;
                         if (found) {
-                            lbPosEl.textContent = 'Peringkat #' + found.rank + ' \u2022 ' + found.present_days + '/' + found.workdays + ' hari (' + found.rate + '%)';
+                            var badge = found.perfect ? ' \u2022 100%' : (found.streak && found.streak >= 3 ? ' \u2022 streak ' + found.streak : '');
+                            lbPosEl.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:999px;border:1px solid var(--primary);color:var(--primary);background:color-mix(in oklch, var(--primary) 10%, transparent);font-size:0.74rem">Peringkat #' + found.rank + ' \u2022 ' + found.present_days + '/' + found.workdays + ' hari (' + found.rate + '%)' + badge + '</span>';
                         }
                     })
                     .catch(function(){});

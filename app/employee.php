@@ -607,7 +607,8 @@ $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
                 }
                 if (!found && d.me) found = d.me;
                 if (found) {
-                    posEl.textContent = 'Peringkat #' + found.rank + ' • ' + found.present_days + '/' + found.workdays + ' hari (' + found.rate + '%)';
+                    var badge = found.perfect ? ' \u2022 100%' : (found.streak && found.streak >= 3 ? ' \u2022 streak ' + found.streak : '');
+                    posEl.innerHTML = 'Peringkat #' + found.rank + ' \u2022 ' + found.present_days + '/' + found.workdays + ' hari (' + found.rate + '%)' + badge;
                 }
             })
             .catch(function(){});

@@ -11,6 +11,8 @@ if ($limit > 50) {
     $limit = 50;
 }
 
+$deptFilter = isset($_GET['dept']) ? trim($_GET['dept']) : '';
+
 $year = isset($_GET['year']) && preg_match('/^\d{4}$/', $_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
 $nowYear = (int)date('Y');
 $start = new DateTime($year . '-01-01', new DateTimeZone('Asia/Jakarta'));
@@ -60,16 +62,39 @@ foreach ($st->fetchAll() as $r) {
 $leaderboardAll = [];
 foreach ($employees as $emp) {
     $code = $emp['emp_code'];
+    $empDept = $emp['dept_name'] ?? '-';
+    if ($deptFilter !== '' && $empDept !== $deptFilter) {
+        continue;
+    }
     $presentSet = $punchMap[$code] ?? [];
     $presentDays = count($presentSet);
+    // calculate streak (consecutive Mon-Sat days up to end with present)
+    $streak = 0;
+    $curChk = clone $end;
+    while ($curChk >= $start) {
+        $cw = (int)$curChk->format('w');
+        if ($cw >= 1 && $cw <= 6) {
+            $cd = $curChk->format('Y-m-d');
+            if (isset($presentSet[$cd])) {
+                $streak++;
+                $curChk->modify('-1 day');
+                continue;
+            } else {
+                break;
+            }
+        }
+        $curChk->modify('-1 day');
+    }
     $leaderboardAll[] = [
         'emp_code' => $code,
         'name' => $emp['first_name'],
-        'dept_name' => $emp['dept_name'] ?? '-',
+        'dept_name' => $empDept,
         'photo_url' => emp_photo_url($code, true),
         'present_days' => $presentDays,
         'workdays' => $workdaysCount,
         'rate' => $workdaysCount > 0 ? round(($presentDays / $workdaysCount) * 100) : 0,
+        'streak' => $streak,
+        'perfect' => ($workdaysCount > 0 && $presentDays >= $workdaysCount),
     ];
 }
 
@@ -109,14 +134,25 @@ if ($limit > 0 && count($leaderboard) > $limit) {
     $leaderboard = array_slice($leaderboard, 0, $limit);
 }
 
+$departments = [];
+$allDepts = array_unique(array_column($employees, 'dept_name'));
+sort($allDepts);
+foreach ($allDepts as $d) {
+    if ($d === null || $d === '') continue;
+    $departments[] = $d;
+}
+
 echo json_encode([
     'success' => true,
     'year' => $year,
     'period' => [
         'start' => $start->format('Y-m-d'),
         'end' => $end->format('Y-m-d'),
+        'end_label' => $end->format('d M Y'),
     ],
     'workdays' => $workdaysCount,
     'leaderboard' => $leaderboard,
     'me' => ($meRow !== null && !$meInTop) ? $meRow : null,
+    'departments' => $departments,
+    'dept_filter' => $deptFilter,
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);

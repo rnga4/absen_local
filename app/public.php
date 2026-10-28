@@ -809,7 +809,7 @@ unset($_SESSION['open_profile']);
         var yearSel = '<select id="lbYearSel" style="border:1px solid var(--border);background:var(--card);color:var(--foreground);border-radius:var(--radius-md);padding:4px 8px;font-size:0.78rem">';
         for (var i=0; i<years.length; i++) yearSel += '<option value="' + years[i] + '"' + (years[i]===yearNow?' selected':'') + '>' + years[i] + '</option>';
         yearSel += '</select>';
-        sec.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div style="display:flex;align-items:center;gap:10px"><h2 style="margin:0;font-size:0.95rem;font-weight:600;letter-spacing:0.01em">Top Konsisten</h2>' + yearSel + '</div><span style="font-size:0.78rem;color:var(--muted-foreground)">Senin\u2013Sabtu</span></div><div class="lb-card" style="border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:var(--card)"><div id="lbLoading" style="padding:10px 14px;color:var(--muted-foreground);font-size:0.86rem">Memuat...</div><div id="lbEmpty" style="display:none;padding:10px 14px;color:var(--muted-foreground);font-size:0.86rem">Belum ada data.</div><div id="lbList" style="display:none"></div></div>';
+        sec.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0;font-size:0.95rem;font-weight:600;letter-spacing:0.01em">Top Konsisten</h2>' + yearSel + '<select id="lbDeptSel" style="border:1px solid var(--border);background:var(--card);color:var(--foreground);border-radius:var(--radius-md);padding:4px 8px;font-size:0.78rem"><option value="">Semua</option></select></div><span id="lbPeriod" style="font-size:0.78rem;color:var(--muted-foreground)">Senin\u2013Sabtu</span></div><div class="lb-card" style="border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;background:var(--card)"><div id="lbLoading" style="padding:10px 14px;color:var(--muted-foreground);font-size:0.86rem">Memuat...</div><div id="lbEmpty" style="display:none;padding:10px 14px;color:var(--muted-foreground);font-size:0.86rem">Belum ada data.</div><div id="lbList" style="display:none"></div></div>';
         var container = document.querySelector('.container');
         if (container) {
             container.appendChild(sec);
@@ -820,54 +820,84 @@ unset($_SESSION['open_profile']);
         var empty = sec.querySelector('#lbEmpty');
         var list = sec.querySelector('#lbList');
         var yearSelEl = sec.querySelector('#lbYearSel');
-        function load(y){
+        var deptSelEl = sec.querySelector('#lbDeptSel');
+        var periodEl = sec.querySelector('#lbPeriod');
+        var currentYear = yearNow;
+        var currentDept = '';
+        function load(y, dept){
+            if (y !== undefined) currentYear = y;
+            if (dept !== undefined) currentDept = dept || '';
             if (loading){ loading.style.display='block'; loading.textContent='Memuat...'; }
             if (empty) empty.style.display='none';
             if (list){ list.style.display='none'; list.innerHTML=''; }
-            fetch('api_leaderboard.php?year=' + y + '&limit=10')
+            var url = 'api_leaderboard.php?year=' + currentYear + '&limit=10';
+            if (currentDept) url += '&dept=' + encodeURIComponent(currentDept);
+            fetch(url)
                 .then(function(r){ return r.json(); })
-            .then(function(d){
-                if (loading) loading.style.display = 'none';
-                if (!d.success || !d.leaderboard || d.leaderboard.length === 0) {
-                    if (empty) empty.style.display = 'block';
-                    return;
-                }
-                var html = '<div style="display:flex;flex-direction:column">';
-                for (var i=0; i<d.leaderboard.length; i++) {
-                    var row = d.leaderboard[i];
-                    var rank = row.rank;
-                    var isMe = meEmpCode && String(row.emp_code) === String(meEmpCode);
-                    var photo = row.photo_url ? '<img src="' + row.photo_url + '" alt="" style="width:100%;height:100%;object-fit:cover">' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--muted);color:var(--muted-foreground);font-size:0.85rem;font-weight:600">' + (row.name ? String(row.name).charAt(0).toUpperCase() : '?') + '</div>';
-                    var rowStyle = isMe ? 'background:color-mix(in oklch, var(--primary) 8%, transparent);' : '';
-                    html += '<div style="display:flex;align-items:center;gap:12px;padding:9px 14px;border-top:1px solid var(--border);' + rowStyle + '">';
-                    html += '<div style="width:20px;text-align:right;color:var(--muted-foreground);font-variant-numeric:tabular-nums">' + rank + '</div>';
-                    html += '<div style="width:34px;height:34px;border-radius:50%;overflow:hidden;flex-shrink:0">' + photo + '</div>';
-                    html += '<div style="flex:1;min-width:0"><div style="font-weight:' + (isMe?'600':'500') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + String(row.name).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + (isMe?' <span style="font-size:0.76rem;color:var(--primary)">(kamu)</span>':'') + '</div><div style="font-size:0.77rem;color:var(--muted-foreground)">' + String(row.dept_name||'-').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div></div>';
-                    html += '<div style="text-align:right;font-variant-numeric:tabular-nums"><span style="font-weight:500">' + row.present_days + '</span><span style="color:var(--muted-foreground)"> / ' + row.workdays + '</span></div>';
+                .then(function(d){
+                    if (periodEl && d.period && d.period.end_label) {
+                        periodEl.textContent = 'Senin\u2013Sabtu \u2022 s/d ' + d.period.end_label;
+                    }
+                    if (deptSelEl && d.departments && deptSelEl.options.length <= 1) {
+                        for (var di=0; di<d.departments.length; di++) {
+                            var opt = document.createElement('option');
+                            opt.value = d.departments[di];
+                            opt.textContent = d.departments[di];
+                            deptSelEl.appendChild(opt);
+                        }
+                        if (d.dept_filter) {
+                            deptSelEl.value = d.dept_filter;
+                            currentDept = d.dept_filter;
+                        }
+                    }
+                    if (loading) loading.style.display = 'none';
+                    if (!d.success || !d.leaderboard || d.leaderboard.length === 0) {
+                        if (empty) empty.style.display = 'block';
+                        return;
+                    }
+                    var html = '<div style="display:flex;flex-direction:column">';
+                    for (var i=0; i<d.leaderboard.length; i++) {
+                        var row = d.leaderboard[i];
+                        var rank = row.rank;
+                        var isMe = meEmpCode && String(row.emp_code) === String(meEmpCode);
+                        var photo = row.photo_url ? '<img src="' + row.photo_url + '" alt="" style="width:100%;height:100%;object-fit:cover">' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--muted);color:var(--muted-foreground);font-size:0.85rem;font-weight:600">' + (row.name ? String(row.name).charAt(0).toUpperCase() : '?') + '</div>';
+                        var rowStyle = isMe ? 'background:color-mix(in oklch, var(--primary) 8%, transparent);border-left:2px solid var(--primary);' : '';
+                        var badge = '';
+                        if (row.perfect) badge = '<span style="font-size:0.72rem;color:var(--primary);margin-left:4px">100%</span>';
+                        else if (row.streak && row.streak >= 3) badge = '<span style="font-size:0.72rem;color:var(--muted-foreground);margin-left:4px">streak ' + row.streak + '</span>';
+                        html += '<div style="display:flex;align-items:center;gap:12px;padding:9px 14px 9px 12px;border-top:1px solid var(--border);' + rowStyle + '">';
+                        html += '<div style="width:20px;text-align:right;color:var(--muted-foreground);font-variant-numeric:tabular-nums">' + rank + '</div>';
+                        html += '<div style="width:34px;height:34px;border-radius:50%;overflow:hidden;flex-shrink:0">' + photo + '</div>';
+                        html += '<div style="flex:1;min-width:0"><div style="font-weight:' + (isMe?'600':'500') + ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + String(row.name).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + (isMe?' <span style="font-size:0.76rem;color:var(--primary)">(kamu)</span>':'') + badge + '</div><div style="font-size:0.77rem;color:var(--muted-foreground)">' + String(row.dept_name||'-').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div></div>';
+                        html += '<div style="text-align:right;font-variant-numeric:tabular-nums"><span style="font-weight:500">' + row.present_days + '</span><span style="color:var(--muted-foreground)"> / ' + row.workdays + '</span></div>';
+                        html += '</div>';
+                    }
+                    if (d.me) {
+                        html += '<div style="border-top:1px dashed var(--border);padding:6px 14px;text-align:center;color:var(--muted-foreground);font-size:0.78rem">...</div>';
+                        var m = d.me;
+                        var mbadge = '';
+                        if (m.perfect) mbadge = '<span style="font-size:0.72rem;color:var(--primary);margin-left:4px">100%</span>';
+                        else if (m.streak && m.streak >= 3) mbadge = '<span style="font-size:0.72rem;color:var(--muted-foreground);margin-left:4px">streak ' + m.streak + '</span>';
+                        var mphoto = m.photo_url ? '<img src="' + m.photo_url + '" alt="" style="width:100%;height:100%;object-fit:cover">' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--muted);color:var(--muted-foreground);font-size:0.85rem;font-weight:600">' + (m.name ? String(m.name).charAt(0).toUpperCase() : '?') + '</div>';
+                        html += '<div style="display:flex;align-items:center;gap:12px;padding:9px 14px 9px 12px;background:color-mix(in oklch, var(--primary) 8%, transparent);border-left:2px solid var(--primary);border-top:1px solid var(--border)">';
+                        html += '<div style="width:20px;text-align:right;color:var(--muted-foreground);font-variant-numeric:tabular-nums">' + m.rank + '</div>';
+                        html += '<div style="width:34px;height:34px;border-radius:50%;overflow:hidden;flex-shrink:0">' + mphoto + '</div>';
+                        html += '<div style="flex:1;min-width:0"><div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + String(m.name).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + ' <span style="font-size:0.76rem;color:var(--primary)">(kamu)</span>' + mbadge + '</div><div style="font-size:0.77rem;color:var(--muted-foreground)">' + String(m.dept_name||'-').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div></div>';
+                        html += '<div style="text-align:right;font-variant-numeric:tabular-nums"><span style="font-weight:500">' + m.present_days + '</span><span style="color:var(--muted-foreground)"> / ' + m.workdays + '</span></div>';
+                        html += '</div>';
+                    }
                     html += '</div>';
-                }
-                if (d.me) {
-                    html += '<div style="border-top:1px dashed var(--border);padding:6px 14px;text-align:center;color:var(--muted-foreground);font-size:0.78rem">...</div>';
-                    var m = d.me;
-                    var mphoto = m.photo_url ? '<img src="' + m.photo_url + '" alt="" style="width:100%;height:100%;object-fit:cover">' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--muted);color:var(--muted-foreground);font-size:0.85rem;font-weight:600">' + (m.name ? String(m.name).charAt(0).toUpperCase() : '?') + '</div>';
-                    html += '<div style="display:flex;align-items:center;gap:12px;padding:9px 14px;background:color-mix(in oklch, var(--primary) 8%, transparent);border-top:1px solid var(--border)">';
-                    html += '<div style="width:20px;text-align:right;color:var(--muted-foreground);font-variant-numeric:tabular-nums">' + m.rank + '</div>';
-                    html += '<div style="width:34px;height:34px;border-radius:50%;overflow:hidden;flex-shrink:0">' + mphoto + '</div>';
-                    html += '<div style="flex:1;min-width:0"><div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + String(m.name).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + ' <span style="font-size:0.76rem;color:var(--primary)">(kamu)</span></div><div style="font-size:0.77rem;color:var(--muted-foreground)">' + String(m.dept_name||'-').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div></div>';
-                    html += '<div style="text-align:right;font-variant-numeric:tabular-nums"><span style="font-weight:500">' + m.present_days + '</span><span style="color:var(--muted-foreground)"> / ' + m.workdays + '</span></div>';
-                    html += '</div>';
-                }
-                html += '</div>';
-                list.innerHTML = html;
-                list.style.display = 'block';
+                    list.innerHTML = html;
+                    list.style.display = 'block';
                 })
                 .catch(function(){
                     if (loading) loading.style.display = 'none';
                     if (empty) { empty.textContent = 'Gagal memuat leaderboard'; empty.style.display = 'block'; }
                 });
         }
-        if (yearSelEl) yearSelEl.addEventListener('change', function(){ load(this.value); });
-        load(yearNow);
+        if (yearSelEl) yearSelEl.addEventListener('change', function(){ load(this.value, currentDept); });
+        if (deptSelEl) deptSelEl.addEventListener('change', function(){ load(currentYear, this.value); });
+        load(yearNow, '');
     })();
     </script>
 </body>
