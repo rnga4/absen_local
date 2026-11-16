@@ -69,6 +69,17 @@ try {
     echo "migrasi: index votes gagal -> " . $e->getMessage() . "\n";
 }
 
+// Migrasi idempotent: counter pengunjung anonim public.php (hari ini + total).
+$pdo->exec("
+CREATE TABLE IF NOT EXISTS public_visits (
+    id          INTEGER PRIMARY KEY CHECK(id = 1),
+    total_count INTEGER NOT NULL DEFAULT 0,
+    today_count INTEGER NOT NULL DEFAULT 0,
+    today_date  TEXT    NOT NULL DEFAULT ''
+)
+");
+$pdo->exec("INSERT OR IGNORE INTO public_visits (id, total_count, today_count, today_date) VALUES (1, 0, 0, '')");
+
 // Seed admin dari env (idempotent: jalankan ulang aman).
 $hash = password_hash(APP_PASS, PASSWORD_DEFAULT);
 $st = $pdo->prepare("
@@ -80,5 +91,5 @@ $st = $pdo->prepare("
 ");
 $st->execute([':u' => APP_USER, ':h' => $hash]);
 
-echo "users table ready. admin='" . APP_USER . "' seeded (bcrypt).\n";;
+echo "users table ready. admin='" . APP_USER . "' seeded (bcrypt).\n";
 echo 'db file: ' . $dir . '/users.sqlite' . "\n";

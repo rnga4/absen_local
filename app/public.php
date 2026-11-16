@@ -46,6 +46,8 @@ $userInitial  = $userName !== '' ? strtoupper(mb_substr($userName, 0, 1)) : '?';
 
 $openProfile = !empty($_SESSION['open_profile']);
 unset($_SESSION['open_profile']);
+
+$visitStats = $loggedIn ? public_visit_stats() : public_visit_bump();
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -159,10 +161,34 @@ unset($_SESSION['open_profile']);
             font-size: 0.95rem; display: none;
         }
         .no-results-msg.active { display: block; }
+        .visit-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 34px; height: 34px; padding: 0;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--card); color: var(--muted-foreground);
+            cursor: pointer; flex-shrink: 0;
+            transition: border-color 0.2s, color 0.2s, transform 0.2s;
+        }
+        .visit-badge:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-1px); }
+        .visit-badge svg { flex-shrink: 0; }
+        .visit-modal-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+        .visit-modal-head svg { color: var(--primary); flex-shrink: 0; }
+        .visit-modal-head h2 { margin: 0; font-size: 1.1rem; }
+        .visit-modal-sub { font-size: 0.82rem; color: var(--muted-foreground); margin: 0 0 18px; }
+        .visit-stats { display: flex; flex-direction: column; gap: 10px; }
+        .visit-stat {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 14px; border-radius: var(--radius-md);
+            border: 1px solid var(--border); background: color-mix(in oklch, var(--muted) 40%, transparent);
+        }
+        .visit-stat-label { font-size: 0.88rem; color: var(--muted-foreground); }
+        .visit-stat-value { font-family: var(--font-mono); font-size: 1.15rem; font-weight: 700; color: var(--foreground); }
         @media (max-width: 600px) {
             #clock { display: none; }
             .pub-emp-btn .pub-emp-label { display: none; }
             .pub-emp-btn { padding: 6px 10px; }
+            .visit-badge { width: 32px; height: 32px; }
         }
     </style>
 </head>
@@ -177,6 +203,9 @@ unset($_SESSION['open_profile']);
         </div>
         <span id="clock" style="flex:1;text-align:center;font-family:var(--font-mono);font-weight:700;font-size:1.05rem"></span>
         <div class="topbar-right" style="display:flex;align-items:center;gap:10px">
+            <button type="button" class="visit-badge" id="visitBadgeBtn" aria-label="Info pengunjung" title="Info pengunjung">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
             <label class="theme-switch-btn" for="theme-popup-checkbox" title="Pilih Tema">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
                 <span class="theme-btn-label">Tema</span>
@@ -351,6 +380,27 @@ unset($_SESSION['open_profile']);
                 <span id="zoomPercent" style="font-family:var(--font-mono);font-size:0.85rem;font-weight:bold;min-width:48px;text-align:center;">100%</span>
                 <button type="button" id="btnZoomIn" style="width:36px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--foreground);font-weight:bold;font-size:1.1rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">+</button>
                 <button type="button" id="btnZoomReset" style="padding:0 12px;height:36px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--muted-foreground);font-size:0.78rem;font-weight:bold;cursor:pointer;">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL INFO PENGUNJUNG ANONIM -->
+    <div id="visitModal" class="modal-backdrop">
+        <div class="modal-box" style="max-width:340px">
+            <div class="visit-modal-head">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                <h2>Pengunjung Anonim</h2>
+            </div>
+            <p class="visit-modal-sub">Jumlah kunjungan ke halaman publik ini.</p>
+            <div class="visit-stats">
+                <div class="visit-stat">
+                    <span class="visit-stat-label">Hari ini</span>
+                    <span class="visit-stat-value"><?= (int)($visitStats['today'] ?? 0) ?></span>
+                </div>
+                <div class="visit-stat">
+                    <span class="visit-stat-label">Total keseluruhan</span>
+                    <span class="visit-stat-value"><?= (int)($visitStats['total'] ?? 0) ?></span>
+                </div>
             </div>
         </div>
     </div>
@@ -717,6 +767,18 @@ unset($_SESSION['open_profile']);
             });
         }
 
+        // MODAL INFO PENGUNJUNG
+        var visitModal = document.getElementById('visitModal');
+        var visitBadgeBtn = document.getElementById('visitBadgeBtn');
+        function visitOpen() { if (visitModal) visitModal.classList.add('show'); }
+        function visitClose() { if (visitModal) visitModal.classList.remove('show'); }
+        if (visitBadgeBtn) visitBadgeBtn.addEventListener('click', visitOpen);
+        if (visitModal) {
+            visitModal.addEventListener('click', function(e) {
+                if (e.target === visitModal) visitClose();
+            });
+        }
+
         // PROFIL MODAL
         var pubProfileModal = document.getElementById('pubProfileModal');
         function pubOpenProfile() { if (pubProfileModal) pubProfileModal.classList.add('show'); }
@@ -733,6 +795,7 @@ unset($_SESSION['open_profile']);
         document.addEventListener('keydown', function(e) {
             if (e.key !== 'Escape') return;
             pubCloseProfile();
+            visitClose();
             closeVoteLogin();
             var t = document.getElementById('drawer-toggle');
             if (t) t.checked = false;

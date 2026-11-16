@@ -268,3 +268,72 @@ function breadcrumb(array $items): void
     }
     echo '</nav>';
 }
+
+// ---- Counter pengunjung anonim public.php (SQLite) ----
+
+function public_visit_ensure_table(PDO $db): void
+{
+    $db->exec(
+        "CREATE TABLE IF NOT EXISTS public_visits (
+            id          INTEGER PRIMARY KEY CHECK(id = 1),
+            total_count INTEGER NOT NULL DEFAULT 0,
+            today_count INTEGER NOT NULL DEFAULT 0,
+            today_date  TEXT    NOT NULL DEFAULT ''
+        )"
+    );
+    $db->exec("INSERT OR IGNORE INTO public_visits (id, total_count, today_count, today_date) VALUES (1, 0, 0, '')");
+}
+
+function public_visit_stats(): array
+{
+    $db = local_db();
+    if ($db === null) {
+        return ['today' => 0, 'total' => 0];
+    }
+    try {
+        $row = $db->query("SELECT total_count, today_count, today_date FROM public_visits WHERE id = 1")->fetch();
+        if (!$row) {
+            return ['today' => 0, 'total' => 0];
+        }
+        $today = date('Y-m-d');
+        $todayCount = ($row['today_date'] === $today) ? (int)$row['today_count'] : 0;
+        return ['today' => $todayCount, 'total' => (int)$row['total_count']];
+    } catch (Throwable $e) {
+        return ['today' => 0, 'total' => 0];
+    }
+}
+
+function public_visit_bump(): array
+{
+    $db = local_db();
+    if ($db === null) {
+        return ['today' => 0, 'total' => 0];
+    }
+    $today = date('Y-m-d');
+    try {
+        $db->setAttribute(PDO::ATTR_TIMEOUT, 2);
+        $db->exec('PRAGMA busy_timeout = 2000');
+        public_visit_ensure_table($db);
+        $st = $db->prepare(
+            "UPDATE public_visits
+             SET total_count = total_count + 1,
+                 today_count = CASE WHEN today_date = :today THEN today_count + 1 ELSE 1 END,
+                 today_date  = :today
+             WHERE id = 1"
+        );
+        $st->execute([':today' => $today]);
+        if ($st->rowCount() === 0) {
+            $db->prepare(
+                "INSERT INTO public_visits (id, total_count, today_count, today_date) VALUES (1, 1, 1, :today)"
+            )->execute([':today' => $today]);
+        }
+        $row = $db->query("SELECT total_count, today_count, today_date FROM public_visits WHERE id = 1")->fetch();
+        if (!$row) {
+            return ['today' => 0, 'total' => 0];
+        }
+        $todayCount = ($row['today_date'] === $today) ? (int)$row['today_count'] : 0;
+        return ['today' => $todayCount, 'total' => (int)$row['total_count']];
+    } catch (Throwable $e) {
+        return public_visit_stats();
+    }
+}
