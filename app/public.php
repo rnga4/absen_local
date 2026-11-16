@@ -47,7 +47,17 @@ $userInitial  = $userName !== '' ? strtoupper(mb_substr($userName, 0, 1)) : '?';
 $openProfile = !empty($_SESSION['open_profile']);
 unset($_SESSION['open_profile']);
 
-$visitStats = $loggedIn ? public_visit_stats() : public_visit_bump();
+$reqPath      = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$isPublicPage = in_array($reqPath, ['/', '/public.php'], true);
+$visitStats   = ['today' => 0, 'total' => 0];
+if ($isPublicPage) {
+    if ($loggedIn) {
+        $visitStats = public_visit_stats();
+    } else {
+        $visitStats = public_visit_bump();
+        public_visit_ip_log(client_ip(), $_SERVER['HTTP_USER_AGENT'] ?? '');
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">

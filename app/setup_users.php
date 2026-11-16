@@ -80,6 +80,35 @@ CREATE TABLE IF NOT EXISTS public_visits (
 ");
 $pdo->exec("INSERT OR IGNORE INTO public_visits (id, total_count, today_count, today_date) VALUES (1, 0, 0, '')");
 
+// Migrasi idempotent: log pengunjung anonim per IP per hari + meta kecil.
+$pdo->exec("
+CREATE TABLE IF NOT EXISTS public_visit_ips (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    ip         TEXT    NOT NULL,
+    visit_date TEXT    NOT NULL,
+    hits       INTEGER NOT NULL DEFAULT 0,
+    first_seen TEXT    NOT NULL DEFAULT '',
+    last_seen  TEXT    NOT NULL DEFAULT '',
+    user_agent TEXT
+)
+");
+$pdo->exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_public_visit_ips_ip_date ON public_visit_ips (ip, visit_date)");
+$pdo->exec("CREATE INDEX IF NOT EXISTS idx_public_visit_ips_date ON public_visit_ips (visit_date)");
+
+$pdo->exec("
+CREATE TABLE IF NOT EXISTS app_meta (
+    k TEXT PRIMARY KEY,
+    v TEXT
+)
+");
+
+// Prune awal: buang data IP lebih lama dari 30 hari.
+$pdo->prepare("DELETE FROM public_visit_ips WHERE visit_date < :d")
+    ->execute([':d' => date('Y-m-d', strtotime('-30 days'))]);
+$pdo->prepare("INSERT INTO app_meta (k, v) VALUES ('visit_ip_prune_date', :d)
+               ON CONFLICT(k) DO UPDATE SET v = excluded.v")
+    ->execute([':d' => date('Y-m-d')]);
+
 // Seed admin dari env (idempotent: jalankan ulang aman).
 $hash = password_hash(APP_PASS, PASSWORD_DEFAULT);
 $st = $pdo->prepare("
