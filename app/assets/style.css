@@ -310,7 +310,8 @@ h2.dept-title {
 .tbl.weekly th, .tbl.weekly td { text-align: center; padding: 8px 6px; }
 
 /* Baris identitas perusahaan: ramping, kecil, muted */
-.tbl.weekly .brand-row th {
+.tbl.weekly .brand-row th,
+.tbl.rekap .brand-row th {
   font-family: var(--font-sans);
   font-size: 0.62rem;
   font-weight: 700;

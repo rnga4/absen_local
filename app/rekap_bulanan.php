@@ -203,7 +203,7 @@ if (($_GET['export'] ?? '') === '1') {
             <div class="card"><div class="num"><?= $grand['count'] ?></div><div class="lbl">Jumlah Slip Gaji</div></div>
         </div>
         <div class="tbl-wrap">
-            <table class="tbl">
+            <table class="tbl rekap">
                 <thead>
                     <tr class="brand-row"><th colspan="6">PT. UNICO — REKAP GAJI BULANAN</th></tr>
                     <tr>
