@@ -93,6 +93,9 @@ if ($isApi) {
                                 $err = 'Gagal menyimpan foto.';
                             } else {
                                 @chmod($dest, 0660);
+                                $db = local_db();
+                                $st = $db->prepare("UPDATE users SET photo = :p WHERE username = :u");
+                                $st->execute([':p' => basename($dest), ':u' => $username]);
                                 $oldPhoto = $user['photo'] ?? '';
                                 if ($oldPhoto !== '' && $oldPhoto !== basename($dest)) {
                                     $old = photo_dir() . '/' . basename($oldPhoto);
@@ -100,9 +103,6 @@ if ($isApi) {
                                         @unlink($old);
                                     }
                                 }
-                                $db = local_db();
-                                $st = $db->prepare("UPDATE users SET photo = :p WHERE username = :u");
-                                $st->execute([':p' => basename($dest), ':u' => $username]);
                                 $ok = 'Foto profil berhasil diperbarui.';
                             }
                         }
@@ -210,6 +210,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $err = 'Gagal menyimpan foto.';
                         } else {
                             @chmod($dest, 0660);
+                            $db = local_db();
+                            $st = $db->prepare("UPDATE users SET photo = :p WHERE username = :u");
+                            $st->execute([':p' => basename($dest), ':u' => $username]);
                             $oldPhoto = $user['photo'] ?? '';
                             if ($oldPhoto !== '' && $oldPhoto !== basename($dest)) {
                                 $old = photo_dir() . '/' . basename($oldPhoto);
@@ -217,9 +220,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     @unlink($old);
                                 }
                             }
-                            $db = local_db();
-                            $st = $db->prepare("UPDATE users SET photo = :p WHERE username = :u");
-                            $st->execute([':p' => basename($dest), ':u' => $username]);
                             flash_set('success', 'Foto profil berhasil diperbarui.');
                             header('Location: profile.php');
                             exit;

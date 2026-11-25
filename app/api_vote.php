@@ -16,12 +16,12 @@ function respond(array $data, int $code = 200): void
     exit;
 }
 
-$action = $_POST['action'] ?? '';
+$action = str_param($_POST, 'action');
 
 switch ($action) {
     case 'login':
-        $user = trim($_POST['username'] ?? '');
-        $pass = $_POST['password'] ?? '';
+        $user = trim(str_param($_POST, 'username'));
+        $pass = str_param($_POST, 'password');
 
         $mkSession = function () {
             session_regenerate_id(true);
@@ -83,7 +83,7 @@ switch ($action) {
             respond(['success' => false, 'message' => 'Login dulu untuk memberi vote.'], 401);
         }
 
-        $empCode = trim($_POST['emp_code'] ?? '');
+        $empCode = trim(str_param($_POST, 'emp_code'));
 
         $valid = false;
         foreach (active_employees() as $emp) {

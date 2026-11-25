@@ -8,7 +8,7 @@ if (($_SESSION['role'] ?? '') !== 'admin') {
     exit;
 }
 
-$bulan = $_GET['bulan'] ?? date('Y-m');
+$bulan = str_param($_GET, 'bulan');
 if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $bulan)) {
     $bulan = date('Y-m');
 }

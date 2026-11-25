@@ -6,8 +6,8 @@ header('Content-Type: application/json; charset=utf-8');
 // Accept form-encoded (application/x-www-form-urlencoded) or JSON body.
 $raw = file_get_contents('php://input');
 $data = json_decode($raw, true) ?: [];
-$user = trim($_POST['username'] ?? ($data['username'] ?? ''));
-$pass = $_POST['password'] ?? ($data['password'] ?? '');
+$user = trim(array_key_exists('username', $_POST) ? str_param($_POST, 'username') : str_param($data, 'username'));
+$pass = array_key_exists('password', $_POST) ? str_param($_POST, 'password') : str_param($data, 'password');
 
 if ($user === '' || $pass === '') {
     http_response_code(400);

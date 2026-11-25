@@ -20,8 +20,8 @@ if ($roleNow === 'employee' && ($_SESSION['emp_code'] ?? '') !== $empCode) {
 
 $offset    = max(0, (int)($_GET['offset'] ?? 0));
 $limit     = 30; // 30 hari per halaman
-$startDate = trim($_GET['start_date'] ?? '');
-$endDate   = trim($_GET['end_date'] ?? '');
+$startDate = trim(str_param($_GET, 'start_date'));
+$endDate   = trim(str_param($_GET, 'end_date'));
 
 // Fetch employee info
 $stEmp = db()->prepare(

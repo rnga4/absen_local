@@ -7,10 +7,7 @@ if (($_SESSION['role'] ?? '') === 'employee') {
     exit;
 }
 
-$start = $_GET['tanggal'] ?? date('Y-m-d');
-if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $start)) {
-    $start = date('Y-m-d');
-}
+$start = request_date($_GET['tanggal'] ?? null);
 
 function week_from_date($start)
 {

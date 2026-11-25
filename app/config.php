@@ -53,6 +53,9 @@ function require_login(): void
         header('Location: login.php');
         exit;
     }
+    if (!isset($_SESSION['role']) || !is_string($_SESSION['role'])) {
+        $_SESSION['role'] = 'employee';
+    }
 }
 
 function e($s): string
@@ -256,7 +259,13 @@ function toggle_love(string $username, string $empCode): array
         $st = $db->prepare("INSERT INTO votes (username, emp_code, vote_date) VALUES (:u, :e, :d)
                             ON CONFLICT(username, emp_code, vote_date) DO NOTHING");
         $st->execute([':u' => $username, ':e' => $empCode, ':d' => $today]);
-        $state = $st->rowCount() > 0 ? 'added' : 'removed';
+        if ($st->rowCount() > 0) {
+            $state = 'added';
+        } else {
+            $check = $db->prepare("SELECT 1 FROM votes WHERE username = :u AND emp_code = :e AND vote_date = :d");
+            $check->execute([':u' => $username, ':e' => $empCode, ':d' => $today]);
+            $state = $check->fetchColumn() ? 'added' : 'removed';
+        }
     }
 
     $count = votes_today_counts()[$empCode] ?? 0;
