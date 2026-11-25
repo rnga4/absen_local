@@ -777,6 +777,10 @@ h2.dept-title {
 .tbl td:nth-child(2) {
   text-align: left !important;
 }
+/* Hadir is child 2 only on rows without the company rowspan cell; keep numbers right-aligned there. */
+.tbl.rekap td.num:nth-child(2) {
+  text-align: right !important;
+}
 
 /* === FLOATING TEMA DROPDOWN ARAH ATAS === */
 .floating-tema .theme-popup__list-container {
