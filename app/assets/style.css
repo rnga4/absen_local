@@ -684,6 +684,28 @@ h2.dept-title {
   width: auto;
   text-align: left;
 }
+.tbl.rekap .company-col, .tbl.rekap .company-label {
+  width: 34px;
+  text-align: center;
+}
+.tbl.rekap .company-label {
+  padding: 8px 4px;
+  background: var(--muted);
+  color: var(--foreground);
+  font-size: 0.72rem;
+  font-weight: 700;
+  vertical-align: middle;
+  border-right: 1px solid var(--border);
+}
+.tbl.rekap .company-label span {
+  display: inline-block;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  max-height: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* === BADGE WARNA === */
 .badge.st-telat { background: oklch(0.55 0.22 25); }   /* merah */

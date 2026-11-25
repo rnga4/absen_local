@@ -210,18 +210,19 @@ if (($_GET['export'] ?? '') === '1') {
         <div class="tbl-wrap">
             <table class="tbl rekap">
                 <thead>
-                    <tr class="brand-row"><th colspan="6">REKAP GAJI BULANAN — <?= strtoupper(date('F Y', strtotime($start))) ?></th></tr>
+                    <tr class="brand-row"><th colspan="7">REKAP GAJI BULANAN — <?= strtoupper(date('F Y', strtotime($start))) ?></th></tr>
                     <tr>
+                        <th class="company-col"></th>
                         <th>Nama</th><th>Kode</th><th>Gaji Pokok</th><th>Pendapatan</th><th>Potongan</th><th>Dibayar</th>
                     </tr>
                 </thead>
                 <tbody>
                 <?php foreach ($groups as $company => $g): ?>
-                    <tr class="dept-row" style="background:var(--muted);font-weight:700;text-align:left">
-                        <td colspan="6"><?= e($company) ?></td>
-                    </tr>
-                    <?php foreach ($g['rows'] as $r): ?>
+                    <?php $first = true; foreach ($g['rows'] as $r): ?>
                     <tr>
+                        <?php if ($first): ?>
+                        <th class="company-label" rowspan="<?= count($g['rows']) + 1 ?>" title="<?= e($company) ?>"><span><?= e($company) ?></span></th>
+                        <?php $first = false; endif; ?>
                         <td class="left"><?= e($r['employee_name']) ?></td>
                         <td><?= e($r['code']) ?></td>
                         <td class="num"><?= rupiah((float)$r['basic_salary']) ?></td>
@@ -239,6 +240,7 @@ if (($_GET['export'] ?? '') === '1') {
                     </tr>
                 <?php endforeach; ?>
                     <tr>
+                        <td class="company-col"></td>
                         <td class="left total" colspan="2">GRAND TOTAL</td>
                         <td class="num total"><?= rupiah($grand['basic']) ?></td>
                         <td class="num total"><?= rupiah($grand['income']) ?></td>
