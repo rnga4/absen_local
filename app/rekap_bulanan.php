@@ -19,7 +19,6 @@ $recaps = [];
 foreach (active_employees() as $emp) {
     $code = (string)$emp['emp_code'];
     $recaps[$code] = [
-        'code'     => $emp['emp_code'],
         'name'     => $emp['first_name'],
         'dept'     => $emp['dept_name'] ?? '-',
         'hadir'    => 0,
@@ -96,14 +95,13 @@ if (($_GET['export'] ?? '') === '1') {
     header('Content-Disposition: attachment; filename="rekap_uang_makan_' . $bulan . '.csv"');
     $out = fopen('php://output', 'w');
     fwrite($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
-    fputcsv($out, ['Departemen', 'Nama', 'Kode', 'Hadir', 'Telat', 'Potongan', 'Uang Makan']);
+    fputcsv($out, ['Departemen', 'Nama', 'Hadir', 'Telat', 'Potongan', 'Uang Makan']);
     if ($hasData) {
         foreach ($groups as $dept => $rows) {
             foreach ($rows as $rec) {
                 fputcsv($out, [
                     csv_text($dept),
                     csv_text($rec['name']),
-                    csv_text($rec['code']),
                     $rec['hadir'],
                     $rec['late'],
                     csv_num($rec['potongan']),
@@ -112,7 +110,7 @@ if (($_GET['export'] ?? '') === '1') {
             }
         }
         fputcsv($out, [
-            'GRAND TOTAL', '', '', '', '',
+            'GRAND TOTAL', '', '', '',
             csv_num($grand['potongan']),
             csv_num($grand['uang']),
         ]);
@@ -240,10 +238,10 @@ if (($_GET['export'] ?? '') === '1') {
         <div class="tbl-wrap">
             <table class="tbl rekap">
                 <thead>
-                    <tr class="brand-row"><th colspan="7">REKAP UANG MAKAN BULANAN — <?= strtoupper(date('F Y', strtotime($start))) ?></th></tr>
+                    <tr class="brand-row"><th colspan="6">REKAP UANG MAKAN BULANAN — <?= strtoupper(date('F Y', strtotime($start))) ?></th></tr>
                     <tr>
                         <th class="company-col"></th>
-                        <th>Nama</th><th>Kode</th><th>Hadir</th><th>Telat</th><th>Potongan</th><th>Uang Makan</th>
+                        <th>Nama</th><th>Hadir</th><th>Telat</th><th>Potongan</th><th>Uang Makan</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -254,7 +252,6 @@ if (($_GET['export'] ?? '') === '1') {
                         <th class="company-label" rowspan="<?= count($rows) + 1 ?>" title="<?= e($dept) ?>"><span><?= e($dept) ?></span></th>
                         <?php $first = false; endif; ?>
                         <td class="left"><?= e($rec['name']) ?></td>
-                        <td><?= e($rec['code']) ?></td>
                         <td class="num"><?= $rec['hadir'] ?></td>
                         <td class="num"><?= $rec['late'] ?></td>
                         <td class="num"><?= rupiah($rec['potongan']) ?></td>
@@ -262,7 +259,7 @@ if (($_GET['export'] ?? '') === '1') {
                     </tr>
                     <?php endforeach; ?>
                     <tr class="dept-total" style="background:var(--muted);font-weight:700;text-align:left">
-                        <td class="left" colspan="2">Subtotal</td>
+                        <td class="left">Subtotal</td>
                         <td class="num total"><?= $subs[$dept]['days'] ?></td>
                         <td class="num total"><?= $subs[$dept]['late'] ?></td>
                         <td class="num total"><?= rupiah($subs[$dept]['potongan']) ?></td>
@@ -271,7 +268,7 @@ if (($_GET['export'] ?? '') === '1') {
                 <?php endforeach; ?>
                     <tr>
                         <td class="company-col"></td>
-                        <td class="left total" colspan="2">GRAND TOTAL</td>
+                        <td class="left total">GRAND TOTAL</td>
                         <td class="num total"><?= $grand['days'] ?></td>
                         <td class="num total"><?= $grand['late'] ?></td>
                         <td class="num total"><?= rupiah($grand['potongan']) ?></td>
