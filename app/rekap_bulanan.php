@@ -1,5 +1,6 @@
 <?php
 require __DIR__ . '/config.php';
+require __DIR__ . '/uang_makan.php';
 require_login();
 
 if (($_SESSION['role'] ?? '') !== 'admin') {
@@ -14,40 +15,65 @@ if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $bulan)) {
 $start = $bulan . '-01';
 $end   = date('Y-m-t', strtotime($start));
 
-$grand = ['count' => 0, 'basic' => 0.0, 'income' => 0.0, 'deduction' => 0.0, 'pay' => 0.0];
-$groups = [];
+$recaps = [];
+foreach (active_employees() as $emp) {
+    $code = (string)$emp['emp_code'];
+    $recaps[$code] = [
+        'code'     => $emp['emp_code'],
+        'name'     => $emp['first_name'],
+        'dept'     => $emp['dept_name'] ?? '-',
+        'hadir'    => 0,
+        'late'     => 0,
+        'potongan' => 0,
+    ];
+}
 
+$seen = [];
+$hasData = false;
 $st = db()->prepare(
-    "SELECT COALESCE(NULLIF(TRIM(company_name), ''), 'Lainnya') AS company,
-            employee_name, code, date AS tanggal, basic_salary, total_income, total_deduction, take_home_pay
-     FROM tax_app.salary_slips
-     WHERE deleted_at IS NULL AND date BETWEEN :s AND :e
-     ORDER BY company, employee_name"
+    "SELECT emp_code, punch_time FROM iclock_transaction_backup
+     WHERE punch_time BETWEEN :s AND :e ORDER BY emp_code, punch_time"
 );
-$st->execute([':s' => $start, ':e' => $end]);
-$emptyGroup = ['rows' => [], 'count' => 0, 'basic' => 0.0, 'income' => 0.0, 'deduction' => 0.0, 'pay' => 0.0];
+$st->execute([':s' => $start . ' 00:00:00', ':e' => $end . ' 23:59:59']);
 foreach ($st->fetchAll() as $r) {
-    $company = $r['company'];
-    if (!isset($groups[$company])) {
-        $groups[$company] = $emptyGroup;
+    $code = (string)$r['emp_code'];
+    if (!isset($recaps[$code])) {
+        continue;
     }
-    $basic     = (float)$r['basic_salary'];
-    $income    = (float)$r['total_income'];
-    $deduction = (float)$r['total_deduction'];
-    $pay       = (float)$r['take_home_pay'];
+    $date = substr($r['punch_time'], 0, 10);
+    if (isset($seen[$code][$date]) || !is_hari_kerja($date)) {
+        continue;
+    }
+    $seen[$code][$date] = true;
+    $potongan = potongan_telat(substr($r['punch_time'], 11, 8));
+    $recaps[$code]['hadir']++;
+    $recaps[$code]['potongan'] += $potongan;
+    if ($potongan > 0) {
+        $recaps[$code]['late']++;
+    }
+    $hasData = true;
+}
 
-    $groups[$company]['rows'][] = $r;
-    $groups[$company]['count']++;
-    $groups[$company]['basic']     += $basic;
-    $groups[$company]['income']    += $income;
-    $groups[$company]['deduction'] += $deduction;
-    $groups[$company]['pay']       += $pay;
-
-    $grand['count']++;
-    $grand['basic']     += $basic;
-    $grand['income']    += $income;
-    $grand['deduction'] += $deduction;
-    $grand['pay']       += $pay;
+$groups = [];
+$subs = [];
+$grand = ['count' => count($recaps), 'days' => 0, 'late' => 0, 'potongan' => 0, 'uang' => 0];
+foreach ($recaps as $rec) {
+    $uang = $rec['hadir'] * 90000 - $rec['potongan'];
+    $rec['uang'] = $uang;
+    $dept = $rec['dept'];
+    if (!isset($groups[$dept])) {
+        $groups[$dept] = [];
+        $subs[$dept] = ['days' => 0, 'late' => 0, 'potongan' => 0, 'uang' => 0];
+    }
+    $groups[$dept][] = $rec;
+    $subs[$dept]['days'] += $rec['hadir'];
+    $subs[$dept]['late'] += $rec['late'];
+    $subs[$dept]['potongan'] += $rec['potongan'];
+    $subs[$dept]['uang'] += $uang;
+    $grand['days'] += $rec['hadir'];
+    $grand['late'] += $rec['late'];
+    $grand['potongan'] += $rec['potongan'];
+    $grand['uang'] += $uang;
 }
 
 function rupiah($n)
@@ -67,31 +93,28 @@ function csv_text($v)
 
 if (($_GET['export'] ?? '') === '1') {
     header('Content-Type: text/csv; charset=UTF-8');
-    header('Content-Disposition: attachment; filename="rekap_gaji_' . $bulan . '.csv"');
+    header('Content-Disposition: attachment; filename="rekap_uang_makan_' . $bulan . '.csv"');
     $out = fopen('php://output', 'w');
     fwrite($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
-    fputcsv($out, ['Perusahaan', 'Nama', 'Kode', 'Tanggal', 'Gaji Pokok', 'Pendapatan', 'Potongan', 'Dibayar']);
-    if ($grand['count'] > 0) {
-        foreach ($groups as $company => $g) {
-            foreach ($g['rows'] as $r) {
+    fputcsv($out, ['Departemen', 'Nama', 'Kode', 'Hadir', 'Telat', 'Potongan', 'Uang Makan']);
+    if ($hasData) {
+        foreach ($groups as $dept => $rows) {
+            foreach ($rows as $rec) {
                 fputcsv($out, [
-                    csv_text($company),
-                    csv_text($r['employee_name']),
-                    csv_text($r['code']),
-                    $r['tanggal'],
-                    csv_num($r['basic_salary']),
-                    csv_num($r['total_income']),
-                    csv_num($r['total_deduction']),
-                    csv_num($r['take_home_pay']),
+                    csv_text($dept),
+                    csv_text($rec['name']),
+                    csv_text($rec['code']),
+                    $rec['hadir'],
+                    $rec['late'],
+                    csv_num($rec['potongan']),
+                    csv_num($rec['uang']),
                 ]);
             }
         }
         fputcsv($out, [
-            'GRAND TOTAL', '', '', '',
-            csv_num($grand['basic']),
-            csv_num($grand['income']),
-            csv_num($grand['deduction']),
-            csv_num($grand['pay']),
+            'GRAND TOTAL', '', '', '', '',
+            csv_num($grand['potongan']),
+            csv_num($grand['uang']),
         ]);
     }
     fclose($out);
@@ -105,7 +128,7 @@ if (($_GET['export'] ?? '') === '1') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#3859A8">
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
-    <title>Rekap Gaji Bulanan - Absensi Monitor</title>
+    <title>Rekap Uang Makan Bulanan - Absensi Monitor</title>
     <link rel="stylesheet" href="assets/pl-komatsu-ui-template.css">
     <link rel="stylesheet" href="assets/style.css">
 </head>
@@ -115,7 +138,7 @@ if (($_GET['export'] ?? '') === '1') {
         <span class="brand">Absensi Monitor</span>
         <div class="topbar-right" style="display:flex;align-items:center;gap:10px">
             <label class="theme-switch-btn" for="theme-popup-checkbox" title="Pilih Tema">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41-1.41"/><path d="M19.07 4.93l-1.41 1.41"/></svg>
                 <span class="theme-btn-label">Tema</span>
             </label>
             <label class="hamburger" for="drawer-toggle">
@@ -144,14 +167,14 @@ if (($_GET['export'] ?? '') === '1') {
             </a>
             <a class="active" href="rekap_bulanan.php">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                <span>Rekap Bulanan</span>
+                <span>Rekap Uang Makan</span>
             </a>
             <a href="visitors.php">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                 <span>Pengunjung</span>
             </a>
             <a href="public.php" target="_blank">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0-20-20"/><path d="M2 12h20"/></svg>
                 <span>Halaman Publik</span>
             </a>
             <a href="profile.php">
@@ -184,9 +207,9 @@ if (($_GET['export'] ?? '') === '1') {
     </div>
 
     <main class="container">
-        <?php breadcrumb([['label' => 'Dashboard', 'href' => 'index.php'], ['label' => 'Rekap Gaji Bulanan']]); ?>
+        <?php breadcrumb([['label' => 'Dashboard', 'href' => 'index.php'], ['label' => 'Rekap Uang Makan Bulanan']]); ?>
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px">
-        <h1 style="margin:0">Rekap Gaji Bulanan</h1>
+        <h1 style="margin:0">Rekap Uang Makan Bulanan</h1>
         <a href="rekap_bulanan.php?bulan=<?= e($bulan) ?>&export=1" class="btn-export">Export Excel</a>
         </div>
 
@@ -198,59 +221,60 @@ if (($_GET['export'] ?? '') === '1') {
         </form>
         <p class="range-info">Periode: <strong><?= date('F Y', strtotime($start)) ?></strong> — <strong><?= date('d F Y', strtotime($end)) ?></strong></p>
 
-        <?php if ($grand['count'] === 0): ?>
-            <p class="range-info">Belum ada data gaji untuk bulan ini.</p>
+        <?php if (!$hasData): ?>
+            <p class="range-info">Belum ada data absen untuk bulan ini.</p>
         <?php else: ?>
         <div class="cards rekap-cards">
-            <div class="card"><div class="num" style="font-size:1.05rem"><?= rupiah($grand['pay']) ?></div><div class="lbl">Total Gaji Dibayar</div></div>
-            <div class="card"><div class="num" style="font-size:1.05rem"><?= rupiah($grand['basic']) ?></div><div class="lbl">Total Gaji Pokok</div></div>
-            <div class="card"><div class="num" style="font-size:1.05rem"><?= rupiah($grand['deduction']) ?></div><div class="lbl">Total Potongan</div></div>
-            <div class="card"><div class="num"><?= $grand['count'] ?></div><div class="lbl">Jumlah Slip Gaji</div></div>
+            <div class="card"><div class="num" style="font-size:1.05rem"><?= rupiah($grand['uang']) ?></div><div class="lbl">Total Uang Makan</div></div>
+            <div class="card"><div class="num" style="font-size:1.05rem"><?= rupiah($grand['potongan']) ?></div><div class="lbl">Total Potongan</div></div>
+            <div class="card"><div class="num"><?= $grand['days'] ?></div><div class="lbl">Total Hari Hadir</div></div>
+            <div class="card"><div class="num"><?= $grand['count'] ?></div><div class="lbl">Jumlah Karyawan</div></div>
         </div>
         <div class="tbl-wrap">
             <table class="tbl rekap">
                 <thead>
-                    <tr class="brand-row"><th colspan="7">REKAP GAJI BULANAN — <?= strtoupper(date('F Y', strtotime($start))) ?></th></tr>
+                    <tr class="brand-row"><th colspan="7">REKAP UANG MAKAN BULANAN — <?= strtoupper(date('F Y', strtotime($start))) ?></th></tr>
                     <tr>
                         <th class="company-col"></th>
-                        <th>Nama</th><th>Kode</th><th>Gaji Pokok</th><th>Pendapatan</th><th>Potongan</th><th>Dibayar</th>
+                        <th>Nama</th><th>Kode</th><th>Hadir</th><th>Telat</th><th>Potongan</th><th>Uang Makan</th>
                     </tr>
                 </thead>
                 <tbody>
-                <?php foreach ($groups as $company => $g): ?>
-                    <?php $first = true; foreach ($g['rows'] as $r): ?>
+                <?php foreach ($groups as $dept => $rows): ?>
+                    <?php $first = true; foreach ($rows as $rec): ?>
                     <tr class="<?= $first ? 'company-start' : '' ?>">
                         <?php if ($first): ?>
-                        <th class="company-label" rowspan="<?= count($g['rows']) + 1 ?>" title="<?= e($company) ?>"><span><?= e($company) ?></span></th>
+                        <th class="company-label" rowspan="<?= count($rows) + 1 ?>" title="<?= e($dept) ?>"><span><?= e($dept) ?></span></th>
                         <?php $first = false; endif; ?>
-                        <td class="left"><?= e($r['employee_name']) ?></td>
-                        <td><?= e($r['code']) ?></td>
-                        <td class="num"><?= rupiah((float)$r['basic_salary']) ?></td>
-                        <td class="num"><?= rupiah((float)$r['total_income']) ?></td>
-                        <td class="num"><?= rupiah((float)$r['total_deduction']) ?></td>
-                        <td class="num total"><?= rupiah((float)$r['take_home_pay']) ?></td>
+                        <td class="left"><?= e($rec['name']) ?></td>
+                        <td><?= e($rec['code']) ?></td>
+                        <td class="num"><?= $rec['hadir'] ?></td>
+                        <td class="num"><?= $rec['late'] ?></td>
+                        <td class="num"><?= rupiah($rec['potongan']) ?></td>
+                        <td class="num total"><?= rupiah($rec['uang']) ?></td>
                     </tr>
                     <?php endforeach; ?>
                     <tr class="dept-total" style="background:var(--muted);font-weight:700;text-align:left">
                         <td class="left" colspan="2">Subtotal</td>
-                        <td class="num total"><?= rupiah($g['basic']) ?></td>
-                        <td class="num total"><?= rupiah($g['income']) ?></td>
-                        <td class="num total"><?= rupiah($g['deduction']) ?></td>
-                        <td class="num total"><?= rupiah($g['pay']) ?></td>
+                        <td></td>
+                        <td class="num total"><?= $subs[$dept]['days'] ?></td>
+                        <td class="num total"><?= $subs[$dept]['late'] ?></td>
+                        <td class="num total"><?= rupiah($subs[$dept]['potongan']) ?></td>
+                        <td class="num total"><?= rupiah($subs[$dept]['uang']) ?></td>
                     </tr>
                 <?php endforeach; ?>
                     <tr>
                         <td class="company-col"></td>
                         <td class="left total" colspan="2">GRAND TOTAL</td>
-                        <td class="num total"><?= rupiah($grand['basic']) ?></td>
-                        <td class="num total"><?= rupiah($grand['income']) ?></td>
-                        <td class="num total"><?= rupiah($grand['deduction']) ?></td>
-                        <td class="num total"><?= rupiah($grand['pay']) ?></td>
+                        <td class="num total"><?= $grand['days'] ?></td>
+                        <td class="num total"><?= $grand['late'] ?></td>
+                        <td class="num total"><?= rupiah($grand['potongan']) ?></td>
+                        <td class="num total"><?= rupiah($grand['uang']) ?></td>
                     </tr>
                 </tbody>
             </table>
         </div>
-        <p class="range-info">Sumber: tax_app.salary_slips</p>
+        <p class="range-info">Sumber: iclock_transaction_backup &amp; personnel_employee</p>
         <?php endif; ?>
     </main>
 
