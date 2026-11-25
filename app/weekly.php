@@ -122,7 +122,7 @@ $grandTotal = 0;
 
 function compute_row($empCode, &$punches)
 {
-    global $days, $dayOrder, $isSaturday;
+    global $days, $dayOrder, $isSaturday, $IN_COLORS, $OUT_COLORS;
     $row = [];
     foreach ($dayOrder as $key) {
         $stamp = $days[$key];
@@ -376,7 +376,7 @@ function compute_row($empCode, &$punches)
             var d = document.querySelector('input[name=tanggal]');
             var t = new Date(d.value + 'T00:00:00');
             t.setDate(t.getDate() + days);
-            d.value = t.toISOString().slice(0, 10);
+            d.value = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
         }
     </script>
 

@@ -89,18 +89,17 @@ if ($isApi) {
                             $safeUser = preg_replace('/[^A-Za-z0-9_\-]/', '_', $username);
                             $dest = photo_dir() . '/' . $safeUser . '.' . $ext;
 
-                            $oldPhoto = $user['photo'] ?? '';
-                            if ($oldPhoto !== '' && $oldPhoto !== basename($dest)) {
-                                $old = photo_dir() . '/' . basename($oldPhoto);
-                                if (is_file($old)) {
-                                    @unlink($old);
-                                }
-                            }
-
                             if (!move_uploaded_file($f['tmp_name'], $dest)) {
                                 $err = 'Gagal menyimpan foto.';
                             } else {
                                 @chmod($dest, 0660);
+                                $oldPhoto = $user['photo'] ?? '';
+                                if ($oldPhoto !== '' && $oldPhoto !== basename($dest)) {
+                                    $old = photo_dir() . '/' . basename($oldPhoto);
+                                    if (is_file($old)) {
+                                        @unlink($old);
+                                    }
+                                }
                                 $db = local_db();
                                 $st = $db->prepare("UPDATE users SET photo = :p WHERE username = :u");
                                 $st->execute([':p' => basename($dest), ':u' => $username]);
@@ -207,18 +206,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $safeUser = preg_replace('/[^A-Za-z0-9_\-]/', '_', $username);
                         $dest = photo_dir() . '/' . $safeUser . '.' . $ext;
 
-                        $oldPhoto = $user['photo'] ?? '';
-                        if ($oldPhoto !== '' && $oldPhoto !== basename($dest)) {
-                            $old = photo_dir() . '/' . basename($oldPhoto);
-                            if (is_file($old)) {
-                                @unlink($old);
-                            }
-                        }
-
                         if (!move_uploaded_file($f['tmp_name'], $dest)) {
                             $err = 'Gagal menyimpan foto.';
                         } else {
                             @chmod($dest, 0660);
+                            $oldPhoto = $user['photo'] ?? '';
+                            if ($oldPhoto !== '' && $oldPhoto !== basename($dest)) {
+                                $old = photo_dir() . '/' . basename($oldPhoto);
+                                if (is_file($old)) {
+                                    @unlink($old);
+                                }
+                            }
                             $db = local_db();
                             $st = $db->prepare("UPDATE users SET photo = :p WHERE username = :u");
                             $st->execute([':p' => basename($dest), ':u' => $username]);

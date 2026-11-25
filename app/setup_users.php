@@ -112,11 +112,8 @@ $pdo->prepare("INSERT INTO app_meta (k, v) VALUES ('visit_ip_prune_date', :d)
 // Seed admin dari env (idempotent: jalankan ulang aman).
 $hash = password_hash(APP_PASS, PASSWORD_DEFAULT);
 $st = $pdo->prepare("
-    INSERT INTO users (username, password_hash, algo, role, name, is_active)
+    INSERT OR IGNORE INTO users (username, password_hash, algo, role, name, is_active)
     VALUES (:u, :h, 'bcrypt', 'admin', 'Admin', 1)
-    ON CONFLICT(username) DO UPDATE SET
-        password_hash = excluded.password_hash,
-        name          = excluded.name
 ");
 $st->execute([':u' => APP_USER, ':h' => $hash]);
 

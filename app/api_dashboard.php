@@ -100,10 +100,11 @@ foreach ($employees as $emp) {
     }
     $status = $in === null ? 'belum' : ($in > '08:00' ? 'telat' : 'hadir');
 
-    if ($filter !== '' && $status !== $filter) continue;
-
     $stat['total']++;
     $stat[$status]++;
+
+    if ($filter !== '' && $status !== $filter) continue;
+
     $rows[$emp['dept_name'] ?? '-'][] = [
         'code'   => $emp['emp_code'],
         'name'   => $emp['first_name'],

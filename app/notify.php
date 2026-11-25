@@ -11,7 +11,7 @@ function notifyTelegram(string $message): bool {
     $context = stream_context_create(['http' => [
         'method'  => 'POST',
         'header'  => 'Content-Type: application/json',
-        'content' => json_encode(['chat_id' => TELEGRAM_CHAT_ID, 'text' => $message, 'parse_mode' => 'Markdown']),
+        'content' => json_encode(['chat_id' => TELEGRAM_CHAT_ID, 'text' => $message]),
         'timeout' => 3,
     ]]);
     return @file_get_contents($url, false, $context) !== false;
