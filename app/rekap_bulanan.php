@@ -108,6 +108,11 @@ if (($_GET['export'] ?? '') === '1') {
                     csv_num($rec['uang']),
                 ]);
             }
+            fputcsv($out, [
+                'Subtotal ' . csv_text($dept), '',
+                $subs[$dept]['days'], $subs[$dept]['late'],
+                csv_num($subs[$dept]['potongan']), csv_num($subs[$dept]['uang']),
+            ]);
         }
         fputcsv($out, [
             'GRAND TOTAL', '', '', '',
