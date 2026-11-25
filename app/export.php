@@ -2,6 +2,11 @@
 require __DIR__ . '/config.php';
 require_login();
 
+if (($_SESSION['role'] ?? '') === 'employee') {
+    http_response_code(403);
+    exit;
+}
+
 $today = date('Y-m-d');
 $date  = $_GET['d'] ?? $today;
 

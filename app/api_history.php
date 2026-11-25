@@ -11,8 +11,8 @@ if ($empCode === '') {
 }
 
 // Role guard: employee (akun normal) hanya boleh melihat riwayat dirinya sendiri.
-// Admin (role=admin atau session lama tanpa role) tetap bisa melihat semua.
-$roleNow = $_SESSION['role'] ?? 'admin';
+// Session lama tanpa role ikut dibatasi sebagai employee.
+$roleNow = $_SESSION['role'] ?? 'employee';
 if ($roleNow === 'employee' && ($_SESSION['emp_code'] ?? '') !== $empCode) {
     echo json_encode(['success' => false, 'error' => 'Akses ditolak']);
     exit;

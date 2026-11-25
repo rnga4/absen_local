@@ -14,7 +14,7 @@ if (!$public) {
     require_login();
 
     // Role guard: employee hanya boleh lihat foto sendiri, admin boleh semua.
-    $roleNow = $_SESSION['role'] ?? 'admin';
+    $roleNow = $_SESSION['role'] ?? 'employee';
     if ($roleNow === 'employee' && ($_SESSION['username'] ?? '') !== $u) {
         http_response_code(403);
         exit('Akses ditolak');
@@ -50,6 +50,6 @@ $mime = [
 ];
 $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 header('Content-Type: ' . ($mime[$ext] ?? 'application/octet-stream'));
-header('Cache-Control: public, max-age=86400');
+header('Cache-Control: ' . ($public ? 'public, max-age=86400' : 'private, no-store'));
 header('Content-Length: ' . filesize($path));
 readfile($path);
