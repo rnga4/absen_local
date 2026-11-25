@@ -684,6 +684,7 @@ h2.dept-title {
   width: auto;
   text-align: left;
 }
+.tbl.rekap .brand-row th { text-align: center; }
 .tbl.rekap .company-col, .tbl.rekap .company-label {
   width: 34px;
   text-align: center;
