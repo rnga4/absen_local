@@ -152,16 +152,15 @@ function rupiah($n)
         </form>
         <p class="range-info">Periode: <strong><?= date('F Y', strtotime($start)) ?></strong> — <strong><?= date('d F Y', strtotime($end)) ?></strong></p>
 
+        <?php if ($grand['count'] === 0): ?>
+            <p class="range-info">Belum ada data gaji untuk bulan ini.</p>
+        <?php else: ?>
         <div class="cards">
             <div class="card"><div class="num" style="font-size:1.05rem"><?= rupiah($grand['pay']) ?></div><div class="lbl">Total Gaji Dibayar</div></div>
             <div class="card"><div class="num" style="font-size:1.05rem"><?= rupiah($grand['basic']) ?></div><div class="lbl">Total Gaji Pokok</div></div>
             <div class="card"><div class="num" style="font-size:1.05rem"><?= rupiah($grand['deduction']) ?></div><div class="lbl">Total Potongan</div></div>
             <div class="card"><div class="num"><?= $grand['count'] ?></div><div class="lbl">Jumlah Slip Gaji</div></div>
         </div>
-
-        <?php if ($grand['count'] === 0): ?>
-            <p class="range-info">Belum ada data gaji untuk bulan ini.</p>
-        <?php else: ?>
         <div class="tbl-wrap">
             <table class="tbl">
                 <thead>
