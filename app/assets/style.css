@@ -228,6 +228,8 @@ h2.dept-title {
   gap: 16px;
   margin-bottom: 28px;
 }
+.cards.rekap-cards { grid-template-columns: repeat(2, 1fr); }
+.cards.rekap-cards .card .num { white-space: nowrap; }
 .cards a.card {
   display: block;
   text-decoration: none;

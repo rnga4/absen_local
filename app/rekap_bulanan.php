@@ -201,7 +201,7 @@ if (($_GET['export'] ?? '') === '1') {
         <?php if ($grand['count'] === 0): ?>
             <p class="range-info">Belum ada data gaji untuk bulan ini.</p>
         <?php else: ?>
-        <div class="cards">
+        <div class="cards rekap-cards">
             <div class="card"><div class="num" style="font-size:1.05rem"><?= rupiah($grand['pay']) ?></div><div class="lbl">Total Gaji Dibayar</div></div>
             <div class="card"><div class="num" style="font-size:1.05rem"><?= rupiah($grand['basic']) ?></div><div class="lbl">Total Gaji Pokok</div></div>
             <div class="card"><div class="num" style="font-size:1.05rem"><?= rupiah($grand['deduction']) ?></div><div class="lbl">Total Potongan</div></div>
