@@ -2,7 +2,7 @@
 require __DIR__ . '/config.php';
 require_login();
 
-if (($_SESSION['role'] ?? '') === 'employee') {
+if (($_SESSION['role'] ?? '') !== 'admin') {
     header('Location: employee.php');
     exit;
 }
@@ -57,7 +57,12 @@ function rupiah($n)
 
 function csv_num($v)
 {
-    return number_format((float)$v, 2, '.', '');
+    return number_format((float)$v, 0, '.', '');
+}
+
+function csv_text($v)
+{
+    return preg_match('/^[=+\-@]/', (string)$v) ? "'" . $v : $v;
 }
 
 if (($_GET['export'] ?? '') === '1') {
@@ -70,10 +75,10 @@ if (($_GET['export'] ?? '') === '1') {
         foreach ($groups as $company => $g) {
             foreach ($g['rows'] as $r) {
                 fputcsv($out, [
-                    $company,
-                    $r['employee_name'],
-                    $r['code'],
-                    date('Y-m-d', strtotime($r['tanggal'])),
+                    csv_text($company),
+                    csv_text($r['employee_name']),
+                    csv_text($r['code']),
+                    $r['tanggal'],
                     csv_num($r['basic_salary']),
                     csv_num($r['total_income']),
                     csv_num($r['total_deduction']),
@@ -205,7 +210,7 @@ if (($_GET['export'] ?? '') === '1') {
         <div class="tbl-wrap">
             <table class="tbl rekap">
                 <thead>
-                    <tr class="brand-row"><th colspan="6">PT. UNICO — REKAP GAJI BULANAN</th></tr>
+                    <tr class="brand-row"><th colspan="6">REKAP GAJI BULANAN — <?= strtoupper(date('F Y', strtotime($start))) ?></th></tr>
                     <tr>
                         <th>Nama</th><th>Kode</th><th>Gaji Pokok</th><th>Pendapatan</th><th>Potongan</th><th>Dibayar</th>
                     </tr>
@@ -250,6 +255,7 @@ if (($_GET['export'] ?? '') === '1') {
     <script>
         function moveMonth(n) {
             var input = document.querySelector('input[name=bulan]');
+            if (!input.value) return;
             var d = new Date(input.value + '-01T12:00:00');
             d.setMonth(d.getMonth() + n);
             input.value = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2);

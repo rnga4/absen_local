@@ -37,6 +37,6 @@ Admin perlu membawa data rekap gaji bulanan ke Excel untuk diolah lebih lanjut. 
 
 - Di `app/rekap_bulanan.php`, tangani `export=1` segera setelah data siap dan sebelum `<!DOCTYPE html>`: keluarkan BOM + header CSV + baris detail + baris grand total, lalu `exit`.
 - Tambah `date AS tanggal` ke SELECT yang sudah ada; tampilkan `date('Y-m-d', strtotime(...))` di kolom Tanggal.
-- Untuk tiap slip di `$groups`, tulis satu baris; gunakan `number_format((float)$v, 2, '.', '')` untuk 4 kolom angka.
+- Untuk tiap slip di `$groups`, tulis satu baris; gunakan `number_format((float)$v, 0, '.', '')` (tanpa desimal: Excel lokal Indonesia membaca titik sebagai pemisah ribuan) untuk 4 kolom angka.
 - Tombol `<a class="btn-export" href="rekap_bulanan.php?bulan=<?= e($bulan) ?>&export=1">Export Excel</a>` di samping `<h1>`, memakai kelas yang sudah ada di `index.php`.
 - Verifikasi: `curl` admin `?bulan=2026-11&export=1` → ada BOM, 48 baris detail + 1 grand total, dan jumlah kolom `Dibayar` = 273837000; employee → 302; `?bulan=2026-10&export=1` → hanya header.

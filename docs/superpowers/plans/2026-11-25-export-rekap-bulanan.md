@@ -16,7 +16,7 @@
 - Satu jalur data: `?bulan=` divalidasi `/^\d{4}-(0[1-9]|1[0-2])$/`, filter `deleted_at IS NULL`, agregasi `$groups`/`$grand` yang sama dengan halaman.
 - Satu query saja; kolom `date AS tanggal` ditambahkan hanya untuk detail, tidak mengubah agregat.
 - CSV+BOM UTF-8: `chr(0xEF).chr(0xBB).chr(0xBF)` sebelum `fputcsv`.
-- Angka memakai `number_format((float)$v, 2, '.', '')` — tanpa pemisah ribuan, tanpa "Rp ".
+- Angka memakai `number_format((float)$v, 0, '.', '')` (tanpa desimal agar tidak salah dibaca Excel id-ID) — tanpa pemisah ribuan, tanpa "Rp ".
 - Nama file `rekap_gaji_YYYY-MM.csv`; header `Content-Type: text/csv; charset=UTF-8` + `Content-Disposition: attachment`.
 - Bulan tanpa data: hanya baris header, tanpa baris angka 0 / grand total.
 
@@ -58,7 +58,7 @@ Di SELECT `tax_app.salary_slips` yang sudah ada, tambahkan `date AS tanggal` set
 
 - [ ] **Step 3: Helper format angka CSV**
 
-Tambahkan fungsi `csv_num($v): string` di dekat `rupiah()` yang mengembalikan `number_format((float)$v, 2, '.', '')`.
+Tambahkan fungsi `csv_num($v): string` di dekat `rupiah()` yang mengembalikan `number_format((float)$v, 0, '.', '')` (tanpa desimal agar tidak salah dibaca Excel id-ID).
 
 - [ ] **Step 4: Blok export sebelum output HTML**
 
