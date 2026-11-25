@@ -230,10 +230,10 @@ if (($_GET['export'] ?? '') === '1') {
             <p class="range-info">Belum ada data absen untuk bulan ini.</p>
         <?php else: ?>
         <div class="cards rekap-cards">
-            <div class="card"><div class="num" style="font-size:1.05rem"><?= rupiah($grand['uang']) ?></div><div class="lbl">Total Uang Makan</div></div>
-            <div class="card"><div class="num" style="font-size:1.05rem"><?= rupiah($grand['potongan']) ?></div><div class="lbl">Total Potongan</div></div>
-            <div class="card"><div class="num"><?= $grand['days'] ?></div><div class="lbl">Total Hari Hadir</div></div>
-            <div class="card"><div class="num"><?= $grand['count'] ?></div><div class="lbl">Jumlah Karyawan</div></div>
+            <a href="#" class="card" data-detail="uang"><div class="num" style="font-size:1.05rem"><?= rupiah($grand['uang']) ?></div><div class="lbl">Total Uang Makan</div></a>
+            <a href="#" class="card" data-detail="potongan"><div class="num" style="font-size:1.05rem"><?= rupiah($grand['potongan']) ?></div><div class="lbl">Total Potongan</div></a>
+            <a href="#" class="card" data-detail="hadir"><div class="num"><?= $grand['days'] ?></div><div class="lbl">Total Hari Hadir</div></a>
+            <a href="#" class="card" data-detail="count"><div class="num"><?= $grand['count'] ?></div><div class="lbl">Jumlah Karyawan</div></a>
         </div>
         <div class="tbl-wrap">
             <table class="tbl rekap">
@@ -278,10 +278,69 @@ if (($_GET['export'] ?? '') === '1') {
             </table>
         </div>
         <p class="range-info">Sumber: iclock_transaction_backup &amp; personnel_employee</p>
+        <?php
+        $detailSets = [
+            'uang'     => ['Uang Makan', 'uang'],
+            'potongan' => ['Potongan', 'potongan'],
+            'hadir'    => ['Hadir', 'days'],
+            'count'    => ['Karyawan', 'count'],
+        ];
+        $detailValue = function ($field, $dept = null) use ($groups, $subs, $grand) {
+            if ($field === 'count') {
+                return (string)($dept === null ? $grand['count'] : count($groups[$dept]));
+            }
+            $n = $dept === null ? $grand[$field] : $subs[$dept][$field];
+            return $field === 'uang' || $field === 'potongan' ? rupiah($n) : (string)$n;
+        };
+        ?>
+        <div class="emp-modal-overlay" id="detailOverlay" role="dialog" aria-modal="true">
+            <div class="emp-modal-box">
+                <div class="emp-modal-header">
+                    <h3 class="emp-info-title" id="detailTitle">Detail</h3>
+                    <button type="button" class="emp-modal-close-btn" id="detailCloseBtn" aria-label="Tutup">&times;</button>
+                </div>
+                <div class="emp-modal-body">
+                    <?php $firstPanel = true; foreach ($detailSets as $key => [$label, $field]): ?>
+                    <div data-panel="<?= $key ?>"<?= $firstPanel ? '' : ' hidden' ?>>
+                        <table class="tbl rekap-detail">
+                            <thead><tr><th>Departemen</th><th><?= e($label) ?></th></tr></thead>
+                            <tbody>
+                            <?php foreach ($groups as $dept => $rows): ?>
+                                <tr><td class="left"><?= e($dept) ?></td><td class="num"><?= $detailValue($field, $dept) ?></td></tr>
+                            <?php endforeach; ?>
+                                <tr><td class="left total">TOTAL</td><td class="num total"><?= $detailValue($field) ?></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <?php $firstPanel = false; endforeach; ?>
+                </div>
+            </div>
+        </div>
         <?php endif; ?>
     </main>
 
     <script>
+        (function () {
+            var overlay = document.getElementById('detailOverlay');
+            var title = document.getElementById('detailTitle');
+            var panels = [].slice.call(document.querySelectorAll('#detailOverlay [data-panel]'));
+            var cards = [].slice.call(document.querySelectorAll('.rekap-cards a.card[data-detail]'));
+            function openDetail(card) {
+                var key = card.dataset.detail;
+                if (title) title.textContent = card.querySelector('.lbl').textContent.trim();
+                panels.forEach(function (p) { p.hidden = p.dataset.panel !== key; });
+                if (overlay) overlay.classList.add('active');
+            }
+            function closeDetail() { if (overlay) overlay.classList.remove('active'); }
+            cards.forEach(function (card) {
+                card.addEventListener('click', function (e) { e.preventDefault(); openDetail(card); });
+            });
+            var closeBtn = document.getElementById('detailCloseBtn');
+            if (closeBtn) closeBtn.addEventListener('click', closeDetail);
+            if (overlay) overlay.addEventListener('click', function (e) { if (e.target === overlay) closeDetail(); });
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDetail(); });
+        })();
+
         function moveMonth(n) {
             var input = document.querySelector('input[name=bulan]');
             if (!input.value) return;

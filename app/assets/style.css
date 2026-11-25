@@ -781,6 +781,8 @@ h2.dept-title {
 .tbl.rekap td.num:nth-child(2) {
   text-align: right !important;
 }
+.tbl.rekap-detail td:first-child, .tbl.rekap-detail th:first-child { width: auto; text-align: left; }
+.tbl.rekap-detail td:last-child, .tbl.rekap-detail th:last-child { text-align: right !important; }
 
 /* === FLOATING TEMA DROPDOWN ARAH ATAS === */
 .floating-tema .theme-popup__list-container {
