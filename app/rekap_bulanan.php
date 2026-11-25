@@ -226,7 +226,7 @@ if (($_GET['export'] ?? '') === '1') {
                     </tr>
                     <?php endforeach; ?>
                     <tr class="dept-total" style="background:var(--muted);font-weight:700;text-align:left">
-                        <td class="left" colspan="2">Subtotal <?= e($company) ?></td>
+                        <td class="left" colspan="2">Subtotal</td>
                         <td class="num total"><?= rupiah($g['basic']) ?></td>
                         <td class="num total"><?= rupiah($g['income']) ?></td>
                         <td class="num total"><?= rupiah($g['deduction']) ?></td>
