@@ -41,7 +41,7 @@ foreach ($st->fetchAll() as $r) {
         continue;
     }
     $date = substr($r['punch_time'], 0, 10);
-    if (isset($seen[$code][$date]) || !is_hari_kerja($date)) {
+    if (isset($seen[$code][$date]) || !is_hari_kerja($date) || substr($r['punch_time'], 11, 5) > '13:00') {
         continue;
     }
     $seen[$code][$date] = true;
@@ -138,7 +138,7 @@ if (($_GET['export'] ?? '') === '1') {
         <span class="brand">Absensi Monitor</span>
         <div class="topbar-right" style="display:flex;align-items:center;gap:10px">
             <label class="theme-switch-btn" for="theme-popup-checkbox" title="Pilih Tema">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41-1.41"/><path d="M19.07 4.93l-1.41 1.41"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
                 <span class="theme-btn-label">Tema</span>
             </label>
             <label class="hamburger" for="drawer-toggle">
@@ -174,7 +174,7 @@ if (($_GET['export'] ?? '') === '1') {
                 <span>Pengunjung</span>
             </a>
             <a href="public.php" target="_blank">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0-20-20"/><path d="M2 12h20"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
                 <span>Halaman Publik</span>
             </a>
             <a href="profile.php">
@@ -256,7 +256,6 @@ if (($_GET['export'] ?? '') === '1') {
                     <?php endforeach; ?>
                     <tr class="dept-total" style="background:var(--muted);font-weight:700;text-align:left">
                         <td class="left" colspan="2">Subtotal</td>
-                        <td></td>
                         <td class="num total"><?= $subs[$dept]['days'] ?></td>
                         <td class="num total"><?= $subs[$dept]['late'] ?></td>
                         <td class="num total"><?= rupiah($subs[$dept]['potongan']) ?></td>
