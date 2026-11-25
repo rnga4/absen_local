@@ -219,7 +219,7 @@ if (($_GET['export'] ?? '') === '1') {
                 <tbody>
                 <?php foreach ($groups as $company => $g): ?>
                     <?php $first = true; foreach ($g['rows'] as $r): ?>
-                    <tr>
+                    <tr class="<?= $first ? 'company-start' : '' ?>">
                         <?php if ($first): ?>
                         <th class="company-label" rowspan="<?= count($g['rows']) + 1 ?>" title="<?= e($company) ?>"><span><?= e($company) ?></span></th>
                         <?php $first = false; endif; ?>

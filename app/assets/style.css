@@ -706,6 +706,11 @@ h2.dept-title {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.tbl.rekap tbody tr.company-start:not(:first-child) th,
+.tbl.rekap tbody tr.company-start:not(:first-child) td {
+  border-top: 2px solid var(--border);
+  padding-top: 16px;
+}
 
 /* === BADGE WARNA === */
 .badge.st-telat { background: oklch(0.55 0.22 25); }   /* merah */
