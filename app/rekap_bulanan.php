@@ -19,7 +19,7 @@ $groups = [];
 
 $st = db()->prepare(
     "SELECT COALESCE(NULLIF(TRIM(company_name), ''), 'Lainnya') AS company,
-            employee_name, code, basic_salary, total_income, total_deduction, take_home_pay
+            employee_name, code, date AS tanggal, basic_salary, total_income, total_deduction, take_home_pay
      FROM tax_app.salary_slips
      WHERE deleted_at IS NULL AND date BETWEEN :s AND :e
      ORDER BY company, employee_name"
@@ -53,6 +53,44 @@ foreach ($st->fetchAll() as $r) {
 function rupiah($n)
 {
     return 'Rp ' . number_format($n, 0, ',', '.');
+}
+
+function csv_num($v)
+{
+    return number_format((float)$v, 2, '.', '');
+}
+
+if (($_GET['export'] ?? '') === '1') {
+    header('Content-Type: text/csv; charset=UTF-8');
+    header('Content-Disposition: attachment; filename="rekap_gaji_' . $bulan . '.csv"');
+    $out = fopen('php://output', 'w');
+    fwrite($out, chr(0xEF) . chr(0xBB) . chr(0xBF));
+    fputcsv($out, ['Perusahaan', 'Nama', 'Kode', 'Tanggal', 'Gaji Pokok', 'Pendapatan', 'Potongan', 'Dibayar']);
+    if ($grand['count'] > 0) {
+        foreach ($groups as $company => $g) {
+            foreach ($g['rows'] as $r) {
+                fputcsv($out, [
+                    $company,
+                    $r['employee_name'],
+                    $r['code'],
+                    date('Y-m-d', strtotime($r['tanggal'])),
+                    csv_num($r['basic_salary']),
+                    csv_num($r['total_income']),
+                    csv_num($r['total_deduction']),
+                    csv_num($r['take_home_pay']),
+                ]);
+            }
+        }
+        fputcsv($out, [
+            'GRAND TOTAL', '', '', '',
+            csv_num($grand['basic']),
+            csv_num($grand['income']),
+            csv_num($grand['deduction']),
+            csv_num($grand['pay']),
+        ]);
+    }
+    fclose($out);
+    exit;
 }
 ?>
 <!DOCTYPE html>
@@ -142,7 +180,10 @@ function rupiah($n)
 
     <main class="container">
         <?php breadcrumb([['label' => 'Dashboard', 'href' => 'index.php'], ['label' => 'Rekap Gaji Bulanan']]); ?>
-        <h1>Rekap Gaji Bulanan</h1>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px">
+        <h1 style="margin:0">Rekap Gaji Bulanan</h1>
+        <a href="rekap_bulanan.php?bulan=<?= e($bulan) ?>&export=1" class="btn-export">Export Excel</a>
+        </div>
 
         <form method="get" class="week-form">
             <input type="month" name="bulan" value="<?= e($bulan) ?>">
