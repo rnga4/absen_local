@@ -2,8 +2,8 @@
 require __DIR__ . '/config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $user = trim($_POST['username'] ?? '');
-    $pass = $_POST['password'] ?? '';
+    $user = trim(str_param($_POST, 'username'));
+    $pass = str_param($_POST, 'password');
 
     $sqliteFile = __DIR__ . '/data/users.sqlite';
     $loginOk = false;

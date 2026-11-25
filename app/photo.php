@@ -1,8 +1,8 @@
 <?php
 require __DIR__ . '/config.php';
 
-$u = trim($_GET['u'] ?? '');
-$emp = trim($_GET['emp'] ?? '');
+$u = trim(str_param($_GET, 'u'));
+$emp = trim(str_param($_GET, 'emp'));
 if ($u === '' && $emp === '') {
     http_response_code(400);
     exit;

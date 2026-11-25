@@ -65,11 +65,8 @@ if ($role === 'employee') {
 }
 
 // --- ADMIN PATH ---
-$today = date('Y-m-d');
-if (isset($_GET['date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['date'])) {
-    $today = $_GET['date'];
-}
-$filter = $_GET['f'] ?? '';
+$today = request_date($_GET['date'] ?? null);
+$filter = str_param($_GET, 'f');
 if (!in_array($filter, ['hadir', 'telat', 'belum'], true)) {
     $filter = '';
 }

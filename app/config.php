@@ -19,6 +19,20 @@ define('APP_PASS', getenv('APP_PASS') ?: 'admin123');
 define('TELEGRAM_BOT_TOKEN', getenv('TELEGRAM_BOT_TOKEN') ?: '');
 define('TELEGRAM_CHAT_ID',   getenv('TELEGRAM_CHAT_ID')   ?: '');
 
+function str_param(array $source, string $key): string
+{
+    $value = $source[$key] ?? '';
+    return is_string($value) ? $value : '';
+}
+
+function request_date($value): string
+{
+    if (!is_string($value) || !preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value, $m)) {
+        return date('Y-m-d');
+    }
+    return checkdate((int)$m[2], (int)$m[3], (int)$m[1]) ? $value : date('Y-m-d');
+}
+
 function db(): PDO
 {
     static $pdo = null;
@@ -239,9 +253,10 @@ function toggle_love(string $username, string $empCode): array
         $db->prepare("DELETE FROM votes WHERE id = :id")->execute([':id' => $existing['id']]);
         $state = 'removed';
     } else {
-        $db->prepare("INSERT INTO votes (username, emp_code, vote_date) VALUES (:u, :e, :d)")
-            ->execute([':u' => $username, ':e' => $empCode, ':d' => $today]);
-        $state = 'added';
+        $st = $db->prepare("INSERT INTO votes (username, emp_code, vote_date) VALUES (:u, :e, :d)
+                            ON CONFLICT(username, emp_code, vote_date) DO NOTHING");
+        $st->execute([':u' => $username, ':e' => $empCode, ':d' => $today]);
+        $state = $st->rowCount() > 0 ? 'added' : 'removed';
     }
 
     $count = votes_today_counts()[$empCode] ?? 0;

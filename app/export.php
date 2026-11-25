@@ -7,11 +7,13 @@ if (($_SESSION['role'] ?? '') === 'employee') {
     exit;
 }
 
-$today = date('Y-m-d');
-$date  = $_GET['d'] ?? $today;
+function csv_safe_text(string $value): string
+{
+    return preg_match('/^[=+\-@\t\r]/', $value) ? "'" . $value : $value;
+}
 
-// Validasi format date
-if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) $date = $today;
+$today = date('Y-m-d');
+$date  = request_date($_GET['d'] ?? null);
 
 $employees = active_employees();
 
@@ -39,8 +41,8 @@ foreach ($employees as $emp) {
     $status = $in === null ? 'Belum' : ($in > '08:00' ? 'Telat' : 'Hadir');
     $rows[] = [
         'No'         => count($rows) + 1,
-        'Nama'       => $emp['first_name'],
-        'Departemen' => $emp['dept_name'] ?? '-',
+        'Nama'       => csv_safe_text($emp['first_name']),
+        'Departemen' => csv_safe_text($emp['dept_name'] ?? '-'),
         'Masuk'      => $in  ?? '-',
         'Keluar'     => $out ?? '-',
         'Status'     => $status,

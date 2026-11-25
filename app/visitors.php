@@ -7,10 +7,7 @@ if (($_SESSION['role'] ?? '') === 'employee') {
     exit;
 }
 
-$dateParam = $_GET['date'] ?? date('Y-m-d');
-if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateParam)) {
-    $dateParam = date('Y-m-d');
-}
+$dateParam = request_date($_GET['date'] ?? null);
 $showAll    = isset($_GET['all']);
 $filterDate = $showAll ? null : $dateParam;
 

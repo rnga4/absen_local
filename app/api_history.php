@@ -4,7 +4,7 @@ require_login();
 
 header('Content-Type: application/json');
 
-$empCode = trim($_GET['code'] ?? '');
+$empCode = trim(str_param($_GET, 'code'));
 if ($empCode === '') {
     echo json_encode(['success' => false, 'error' => 'Parameter code required']);
     exit;

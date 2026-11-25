@@ -11,10 +11,12 @@ if ($limit > 50) {
     $limit = 50;
 }
 
-$deptFilter = isset($_GET['dept']) ? trim($_GET['dept']) : '';
+$deptFilter = trim(str_param($_GET, 'dept'));
 
-$year = isset($_GET['year']) && preg_match('/^\d{4}$/', $_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
 $nowYear = (int)date('Y');
+$yearRaw = str_param($_GET, 'year');
+$year = preg_match('/^\d{4}$/', $yearRaw) ? (int)$yearRaw : $nowYear;
+$year = min($year, $nowYear);
 $start = new DateTime($year . '-01-01', new DateTimeZone('Asia/Jakarta'));
 if ($year >= $nowYear) {
     $end = new DateTime('today', new DateTimeZone('Asia/Jakarta'));
