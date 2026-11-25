@@ -220,6 +220,13 @@ if (($_GET['export'] ?? '') === '1') {
             <button type="submit" class="submit">Tampilkan</button>
         </form>
         <p class="range-info">Periode: <strong><?= date('F Y', strtotime($start)) ?></strong> — <strong><?= date('d F Y', strtotime($end)) ?></strong></p>
+        <div class="weekly-legend">
+            <span class="lg-label">Ketentuan:</span>
+            <span class="lg-item">Rp 90.000 per hari hadir (Senin–Sabtu)</span>
+            <span class="lg-item">Telat = jumlah hari masuk setelah 08.00</span>
+            <span class="lg-item">Potong Rp 10.000 per jam yang dimulai (1 menit = Rp 10.000, 61 menit = Rp 20.000)</span>
+            <span class="lg-item">Minggu / tanpa punch = Rp 0</span>
+        </div>
 
         <?php if (!$hasData): ?>
             <p class="range-info">Belum ada data absen untuk bulan ini.</p>
