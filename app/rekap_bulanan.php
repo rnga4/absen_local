@@ -224,6 +224,7 @@ if (($_GET['export'] ?? '') === '1') {
             <span class="lg-item">Telat = jumlah hari masuk setelah 08.00</span>
             <span class="lg-item">Potong Rp 10.000 per jam yang dimulai (1 menit = Rp 10.000, 61 menit = Rp 20.000)</span>
             <span class="lg-item">Minggu / tanpa punch = Rp 0</span>
+            <span class="lg-item">Punch setelah 13.00 tidak dihitung hadir</span>
         </div>
 
         <?php if (!$hasData): ?>
