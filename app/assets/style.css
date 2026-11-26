@@ -783,6 +783,12 @@ h2.dept-title {
 }
 .tbl.rekap-detail td:first-child, .tbl.rekap-detail th:first-child { width: auto; text-align: left; }
 .tbl.rekap-detail td:last-child, .tbl.rekap-detail th:last-child { text-align: right !important; }
+.pot-detail-btn { background:none; border:none; padding:0; margin:0; font:inherit; color:inherit; cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px; }
+.pot-detail-btn:hover, .pot-detail-btn:focus-visible { color: var(--primary); }
+.pot-detail-meta { margin:0 0 10px; font-size:0.82rem; color: var(--muted-foreground); }
+.pot-detail-summary { display:grid; gap:6px; margin-bottom:12px; font-size:0.85rem; }
+.pot-detail-line { display:flex; justify-content:space-between; gap:12px; }
+.pot-detail-line.total { font-weight:700; border-top:1px solid var(--border); padding-top:6px; }
 
 /* === FLOATING TEMA DROPDOWN ARAH ATAS === */
 .floating-tema .theme-popup__list-container {

@@ -25,6 +25,7 @@ foreach (active_employees() as $emp) {
         'hadir'       => 0,
         'late'        => 0,
         'pot_telat'   => 0,
+        'late_days'   => [],
     ];
 }
 
@@ -45,11 +46,19 @@ foreach ($st->fetchAll() as $r) {
         continue;
     }
     $seen[$code][$date] = true;
-    $potongan = potongan_telat(substr($r['punch_time'], 11, 8));
+    $jamMasuk = substr($r['punch_time'], 11, 8);
+    $potongan = potongan_telat($jamMasuk);
     $recaps[$code]['hadir']++;
     $recaps[$code]['pot_telat'] += $potongan;
     if ($potongan > 0) {
+        $menit = (int) ceil((strtotime('1970-01-01 ' . $jamMasuk) - strtotime('1970-01-01 08:00:00')) / 60);
         $recaps[$code]['late']++;
+        $recaps[$code]['late_days'][] = [
+            'date' => $date,
+            'in'   => substr($jamMasuk, 0, 5),
+            'min'  => $menit,
+            'pot'  => $potongan,
+        ];
     }
     $hasData = true;
 }
@@ -64,6 +73,17 @@ foreach ($recaps as $rec) {
     $rec['absen'] = $absen;
     $rec['potongan'] = $potongan;
     $rec['uang'] = $uang;
+    $rec['detail'] = json_encode([
+        'name'       => $rec['name'],
+        'dept'       => $rec['dept'],
+        'workdays'   => $workdays,
+        'hadir'      => $rec['hadir'],
+        'absen'      => $absen,
+        'pot_absen'  => $absen * 90000,
+        'pot_telat'  => $rec['pot_telat'],
+        'potongan'   => $potongan,
+        'late_days'  => $rec['late_days'],
+    ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
     $dept = $rec['dept'];
     if (!isset($groups[$dept])) {
         $groups[$dept] = [];
@@ -264,8 +284,8 @@ if (($_GET['export'] ?? '') === '1') {
                         <?php $first = false; endif; ?>
                         <td class="left"><?= e($rec['name']) ?></td>
                         <td class="num"><?= $rec['hadir'] ?></td>
-                        <td class="num"><?= $rec['late'] ?></td>
-                        <td class="num"><?= rupiah($rec['potongan']) ?></td>
+                        <td class="num"><button type="button" class="pot-detail-btn" data-detail='<?= e($rec['detail']) ?>'><?= $rec['late'] ?></button></td>
+                        <td class="num"><button type="button" class="pot-detail-btn" data-detail='<?= e($rec['detail']) ?>'><?= rupiah($rec['potongan']) ?></button></td>
                         <td class="num total"><?= rupiah($rec['uang']) ?></td>
                     </tr>
                     <?php endforeach; ?>
@@ -324,6 +344,19 @@ if (($_GET['export'] ?? '') === '1') {
                         </table>
                     </div>
                     <?php $firstPanel = false; endforeach; ?>
+                    <div data-panel="pot-detail" hidden>
+                        <p class="pot-detail-meta" id="potDetailMeta"></p>
+                        <div class="pot-detail-summary">
+                            <div class="pot-detail-line"><span>Absen</span><strong id="potDetailAbsen"></strong></div>
+                            <div class="pot-detail-line"><span>Denda telat</span><strong id="potDetailLate"></strong></div>
+                            <div class="pot-detail-line total"><span>Total potongan</span><strong id="potDetailTotal"></strong></div>
+                        </div>
+                        <table class="tbl rekap-detail" id="potDetailTable">
+                            <thead><tr><th>Tanggal</th><th>Masuk</th><th>Telat</th><th>Denda</th></tr></thead>
+                            <tbody id="potDetailBody"></tbody>
+                        </table>
+                        <p class="range-info" id="potDetailEmpty" hidden>Tidak ada denda telat.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -336,15 +369,44 @@ if (($_GET['export'] ?? '') === '1') {
             var title = document.getElementById('detailTitle');
             var panels = [].slice.call(document.querySelectorAll('#detailOverlay [data-panel]'));
             var cards = [].slice.call(document.querySelectorAll('.rekap-cards a.card[data-detail]'));
+            var potBtns = [].slice.call(document.querySelectorAll('.pot-detail-btn'));
+            function rupiah(n) { return 'Rp ' + Number(n || 0).toLocaleString('id-ID'); }
+            function showPanel(key) { panels.forEach(function (p) { p.hidden = p.dataset.panel !== key; }); }
             function openDetail(card) {
-                var key = card.dataset.detail;
                 if (title) title.textContent = card.querySelector('.lbl').textContent.trim();
-                panels.forEach(function (p) { p.hidden = p.dataset.panel !== key; });
+                showPanel(card.dataset.detail);
+                if (overlay) overlay.classList.add('active');
+            }
+            function openPotDetail(btn) {
+                var d = JSON.parse(btn.dataset.detail || '{}');
+                if (title) title.textContent = 'Rincian Potongan — ' + (d.name || '');
+                var meta = document.getElementById('potDetailMeta');
+                var absen = document.getElementById('potDetailAbsen');
+                var late = document.getElementById('potDetailLate');
+                var total = document.getElementById('potDetailTotal');
+                var body = document.getElementById('potDetailBody');
+                var table = document.getElementById('potDetailTable');
+                var empty = document.getElementById('potDetailEmpty');
+                if (meta) meta.textContent = (d.dept || '-') + ' • Hadir ' + (d.hadir || 0) + '/' + (d.workdays || 0) + ' hari kerja';
+                if (absen) absen.textContent = (d.absen || 0) + ' hari × Rp 90.000 = ' + rupiah(d.pot_absen);
+                if (late) late.textContent = rupiah(d.pot_telat);
+                if (total) total.textContent = rupiah(d.potongan);
+                var rows = d.late_days || [];
+                if (body) body.innerHTML = rows.map(function (r) {
+                    var jam = Math.ceil((r.min || 0) / 60);
+                    return '<tr><td class="left">' + r.date + '</td><td class="num">' + r.in + '</td><td class="num">' + r.min + ' mnt (' + jam + ' jam)</td><td class="num">' + rupiah(r.pot) + '</td></tr>';
+                }).join('');
+                if (table) table.hidden = rows.length === 0;
+                if (empty) empty.hidden = rows.length !== 0;
+                showPanel('pot-detail');
                 if (overlay) overlay.classList.add('active');
             }
             function closeDetail() { if (overlay) overlay.classList.remove('active'); }
             cards.forEach(function (card) {
                 card.addEventListener('click', function (e) { e.preventDefault(); openDetail(card); });
+            });
+            potBtns.forEach(function (btn) {
+                btn.addEventListener('click', function () { openPotDetail(btn); });
             });
             var closeBtn = document.getElementById('detailCloseBtn');
             if (closeBtn) closeBtn.addEventListener('click', closeDetail);
