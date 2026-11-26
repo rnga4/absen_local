@@ -15,15 +15,16 @@ if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $bulan)) {
 $start = $bulan . '-01';
 $end   = date('Y-m-t', strtotime($start));
 
+$workdays = hari_kerja_bulan($start, $end);
 $recaps = [];
 foreach (active_employees() as $emp) {
     $code = (string)$emp['emp_code'];
     $recaps[$code] = [
-        'name'     => $emp['first_name'],
-        'dept'     => $emp['dept_name'] ?? '-',
-        'hadir'    => 0,
-        'late'     => 0,
-        'potongan' => 0,
+        'name'        => $emp['first_name'],
+        'dept'        => $emp['dept_name'] ?? '-',
+        'hadir'       => 0,
+        'late'        => 0,
+        'pot_telat'   => 0,
     ];
 }
 
@@ -46,7 +47,7 @@ foreach ($st->fetchAll() as $r) {
     $seen[$code][$date] = true;
     $potongan = potongan_telat(substr($r['punch_time'], 11, 8));
     $recaps[$code]['hadir']++;
-    $recaps[$code]['potongan'] += $potongan;
+    $recaps[$code]['pot_telat'] += $potongan;
     if ($potongan > 0) {
         $recaps[$code]['late']++;
     }
@@ -57,7 +58,11 @@ $groups = [];
 $subs = [];
 $grand = ['count' => count($recaps), 'days' => 0, 'late' => 0, 'potongan' => 0, 'uang' => 0];
 foreach ($recaps as $rec) {
-    $uang = $rec['hadir'] * 90000 - $rec['potongan'];
+    $absen = $workdays - $rec['hadir'];
+    $potongan = $absen * 90000 + $rec['pot_telat'];
+    $uang = $workdays * 90000 - $potongan;
+    $rec['absen'] = $absen;
+    $rec['potongan'] = $potongan;
     $rec['uang'] = $uang;
     $dept = $rec['dept'];
     if (!isset($groups[$dept])) {
@@ -67,11 +72,11 @@ foreach ($recaps as $rec) {
     $groups[$dept][] = $rec;
     $subs[$dept]['days'] += $rec['hadir'];
     $subs[$dept]['late'] += $rec['late'];
-    $subs[$dept]['potongan'] += $rec['potongan'];
+    $subs[$dept]['potongan'] += $potongan;
     $subs[$dept]['uang'] += $uang;
     $grand['days'] += $rec['hadir'];
     $grand['late'] += $rec['late'];
-    $grand['potongan'] += $rec['potongan'];
+    $grand['potongan'] += $potongan;
     $grand['uang'] += $uang;
 }
 
@@ -225,10 +230,10 @@ if (($_GET['export'] ?? '') === '1') {
         <p class="range-info">Periode: <strong><?= date('F Y', strtotime($start)) ?></strong> — <strong><?= date('d F Y', strtotime($end)) ?></strong></p>
         <div class="weekly-legend">
             <span class="lg-label">Ketentuan:</span>
-            <span class="lg-item">Rp 90.000 per hari hadir (Senin–Sabtu)</span>
+            <span class="lg-item">Basis Rp 90.000 per hari kerja (Senin–Sabtu)</span>
+            <span class="lg-item">Tidak hadir = potong Rp 90.000 per hari</span>
             <span class="lg-item">Telat = jumlah hari masuk setelah 08.00</span>
             <span class="lg-item">Potong Rp 10.000 per jam yang dimulai (1 menit = Rp 10.000, 61 menit = Rp 20.000)</span>
-            <span class="lg-item">Minggu / tanpa punch = Rp 0</span>
             <span class="lg-item">Punch setelah 13.00 tidak dihitung hadir</span>
         </div>
 
